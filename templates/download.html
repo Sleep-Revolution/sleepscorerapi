@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block headstyles %}
+<style>
+  .card:hover{
+  transform: scale(1.01);
+  box-shadow: 0 10px 20px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+}
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="container">
+  <div class="row mt-5">
+      <div class="col-md-5">
+          <h3>Download desktop client</h3>
+          <p>Access the Sleep Revolution SleepScorer on Windows or Linux desktops with the native application.</p>
+      </div>
+      <div class="col-md-7">
+          <div class="card mb-3">
+              <div class="card-body">
+                  <div class="row">
+                      <div class="col-sm-3">
+                          <img width=90% src="{{ url_for('static', path='img/windows-icon.svg') }}">
+                      </div>
+                      <div class="col-sm-9">
+                          <h5 class="card-title">Windows</h5>
+                          <p class="card-text">Support for Windows 8, 10 and 11</p>
+                      </div>
+                  </div>
+                
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                  <div class="row">
+                      <div class="col-sm-3">
+                          <img width=90% src="{{ url_for('static', path='img/linux.svg') }}">
+                      </div>
+                      <div class="col-sm-9">
+                          <h5 class="card-title">Windows</h5>
+                          <p class="card-text">Support for most distributions</p>
+                      </div>
+                  </div>
+                
+              </div>
+            </div>
+      </div>
+  </div>
+  <h3></h3>
+  
+  
+</div>
+
+{% endblock %}
