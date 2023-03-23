@@ -1,17 +1,51 @@
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+import jwt
 from typing import List
 import time
 from random import randint
 import os
+from Src.Services.AuthenticationService import AuthenticationService
+from Src.Infrastructure.JWT import JWTBearer
+from Src.Models.Models import CentreCreate, AuthCredentials
+
+
+authenticationService = AuthenticationService()
+
 
 UPLOAD_DIR = "uploaded_files"
 
 app = FastAPI(max_request_size=4*1024*1024*1024) # 4 GB max file size
 templates = Jinja2Templates(directory="templates")
+
+
+
+
+
+
+
+jwtBearer = JWTBearer()
+
+
+
+
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.get('/centres', response_class=JSONResponse)
+async def home(request: Request):
+    return [user.__dict__ for user in authenticationService.GetAllCentres() ]
+
+@app.post('/centres',  response_class=JSONResponse)
+async def CreateCentre(newCentre:  CentreCreate):
+    return authenticationService.CreateCentre(newCentre)
+
+@app.post("/authenticate", response_class=JSONResponse)
+async def AuthenticateCentre(credentials: AuthCredentials):
+    return authenticationService.AuthenticateCentre(credentials)
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -19,6 +53,15 @@ async def home(request: Request):
         "page": "Home page",
     }
     return templates.TemplateResponse("index.html", {"request": request, "data": data})
+
+@app.get("/me")
+def protected_route(bla = Depends(jwtBearer)):
+    user = authenticationService.GetCentreById(1)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return user
+
 
 @app.get("/download", response_class=HTMLResponse)
 async def home(request: Request):
