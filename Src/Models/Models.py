@@ -19,3 +19,5 @@ class AuthCredentials(BaseModel):
     CentreName: str
     Password: str
 
+class RecordingRequest(BaseModel):
+    s: str

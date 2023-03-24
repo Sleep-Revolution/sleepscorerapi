@@ -9,27 +9,43 @@ from random import randint
 import os
 from Src.Services.AuthenticationService import AuthenticationService
 from Src.Infrastructure.JWT import JWTBearer
-from Src.Models.Models import CentreCreate, AuthCredentials
-
+from Src.Models.Models import CentreCreate, AuthCredentials, RecordingRequest
+import pika
+import uuid
+import asyncio
 
 authenticationService = AuthenticationService()
 
 
-UPLOAD_DIR = "uploaded_files"
+UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
+rabbit_mq_server = os.environ['RABBITMQ_SERVER']
+
 
 app = FastAPI(max_request_size=4*1024*1024*1024) # 4 GB max file size
 templates = Jinja2Templates(directory="templates")
 
 
 
-
-
-
-
+# Connection parameters
 jwtBearer = JWTBearer()
+connection_params = pika.ConnectionParameters(rabbit_mq_server, 5672, )
 
 
+def foo():
 
+
+    queue_name = 'my_queue'
+
+    # Connect to RabbitMQ
+    connection = pika.BlockingConnection(connection_params)
+    channel = connection.channel()
+
+    # Declare the queue
+    channel.queue_declare(queue=queue_name)
+
+    # Close the connection
+    connection.close()
+foo()
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -49,14 +65,26 @@ async def AuthenticateCentre(credentials: AuthCredentials):
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
+    '''This is the root page of our portal, this needs to be replaced with a log-in page.'''
     data = {
         "page": "Home page",
     }
     return templates.TemplateResponse("index.html", {"request": request, "data": data})
 
+@app.get('/upload')
+async def upload(request = Depends(jwtBearer)):
+    return {}
+
+@app.post('/upload')
+async def upload(file: UploadFile, request = Depends(jwtBearer)):
+    print(file.file.read())
+    print(request)
+    id = str(uuid.uuid4())
+    print(id)
+
 @app.get("/me")
 def protected_route(bla = Depends(jwtBearer)):
-    user = authenticationService.GetCentreById(1)
+    user = authenticationService.GetCentreById(bla)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
