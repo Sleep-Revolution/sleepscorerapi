@@ -14,7 +14,7 @@ class AuthenticationService:
     def GetAllCentres(self):
         return self.AuthenticationRepository.GetAllCentres()
 
-    def GetCentreById(self, centreId: int):
+    def GetCentreById(self, centreId: int) -> Centre:
         return self.AuthenticationRepository.GetCentreById(centreId)
 
     def CreateCentre(self, centre: CentreCreate):
@@ -30,10 +30,12 @@ class AuthenticationService:
         newCentre.ResponsibleEmail = centre.ResponsibleEmail
         newCentre.PasswordSalt = bcrypt.gensalt()
         newCentre.PasswordHash = bcrypt.hashpw(centre.Password.encode('utf-8'), newCentre.PasswordSalt)
+        newCentre.FolderLocation = f'ESADA/{newCentre.CentreName}'
         return self.AuthenticationRepository.CreateCentre(newCentre)
         
     def AuthenticateCentre(self, centre: AuthCredentials):
-        db_centre = self.AuthenticationRepository.GetCentreByName(centre.CentreName)
+        # db_centre = self.AuthenticationRepository.GetCentreByName(centre.CentreName)
+        db_centre = self.AuthenticationRepository.GetCentreByEmail(centre.Email)
         if(db_centre == None):
             return False
         

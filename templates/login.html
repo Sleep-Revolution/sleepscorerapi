@@ -43,11 +43,11 @@
                     <form id="login-form">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email address</label>
-                            <input type="email" class="form-control" id="email" aria-describedby="emailHelp" required>
+                            <input type="email" class="form-control" id="email" aria-describedby="emailHelp" required value="e@esre.is">
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" required>
+                            <input type="password" class="form-control" id="password" required value="peepeepoopoo">
                         </div>
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Login</button>
@@ -64,14 +64,38 @@
 
 {% block extrascripts %}
 <script>
+
+    async function postData(url = '', data = {}) {
+    // Default options are marked with *
+    const response = await fetch(url, {
+        method: 'POST', // *GET, POST, PUT, DELETE, etc.
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data) // body data type must match "Content-Type" header
+    });
+    return response.json(); // parses JSON response into native JavaScript objects
+    }
+
+
+
+
     document.getElementById("login-form").addEventListener("submit", function(event) {
         event.preventDefault();
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
+        const Email = document.getElementById("email").value;
+        const Password = document.getElementById("password").value;
 
         // Perform your login logic here, e.g., send data to your server for validation
-        console.log("Email:", email);
-        console.log("Password:", password);
+        console.log("Email:", Email);
+        console.log("Password:", Password);
+
+        postData('authenticate', {Email, Password}).then(data => {
+            window.location.href = "/"
+        }).catch(e => {
+            console.log("errorr!!!!");
+            console.log(e);
+        })
+
     });
 </script>
 

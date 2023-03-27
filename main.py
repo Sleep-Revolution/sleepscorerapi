@@ -1,56 +1,93 @@
-from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, status
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import jwt
-from typing import List
 import time
-from random import randint
-import os
 from Src.Services.AuthenticationService import AuthenticationService
-from Src.Infrastructure.JWT import JWTBearer
-from Src.Models.Models import CentreCreate, AuthCredentials, RecordingRequest
-import pika
-import uuid
-import asyncio
+from Src.Services.UploadService import UploadService
+from Src.Infrastructure.JWT import JWTBearer, ParseAccessToken
+from Src.Models.Models import CentreCreate, AuthCredentials
 
 authenticationService = AuthenticationService()
-
-
-UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
-rabbit_mq_server = os.environ['RABBITMQ_SERVER']
-
+uploadService = UploadService()
 
 app = FastAPI(max_request_size=4*1024*1024*1024) # 4 GB max file size
 templates = Jinja2Templates(directory="templates")
 
-
-
-# Connection parameters
 jwtBearer = JWTBearer()
-creds = pika.PlainCredentials('server', 'server')
-connection_params = pika.ConnectionParameters(rabbit_mq_server, 5672, '/', creds)
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    # if exc.status_code == 401:
+    return RedirectResponse('/login')
+    # return templates.TemplateResponse("error.html", {"request": request, "error": exc})
 
-# def foo():
-
-
-#     queue_name = 'files_ready_to_process'
-
-    # # Connect to RabbitMQ
-    # connection = pika.BlockingConnection(connection_params)
-    # channel = connection.channel()
-
-    # # Declare the queue
-    # channel.queue_declare(queue=queue_name)
+async def parse_cookie_header(request: Request, call_next):
+    session_id = request.cookies.get("session_id")
+    request.state.centre = None
+    if not session_id:
+        return await call_next(request)
+    try:
+        id = ParseAccessToken(session_id)
+        centre = authenticationService.GetCentreById(id)
+        request.state.centre = centre
+    except Exception as e:
+        return await call_next(request)
+    return await call_next(request)
     
-#     # Close the connection
-#     connection.close()
-# foo()
-# exit()
+app.middleware("http")(parse_cookie_header)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.get("/login", response_class=HTMLResponse)
+async def login(request: Request):
+    '''This is the root page of our portal, this needs to be replaced with a log-in page.'''
+    data = {
+        "page": "Login",
+    }
+    return templates.TemplateResponse("login.html", {"request": request, "data": data})
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    print("this is the centre", request.state.centre)
+    data = {
+        "page": "Home page",
+    }
+    return templates.TemplateResponse("index.html", {"request": request, "data": data})
+
+
+@app.post('/uploadfile', response_class=HTMLResponse)
+async def create_upload_file(file: UploadFile = File(...), request: Request = Depends(jwtBearer)):
+
+    centre = authenticationService.GetCentreById(request)
+    
+
+    if file.content_type != "application/zip":
+        data = {
+            "title": "Upload failed",
+            "status": "failed",
+            "message": "File type not supported. Please upload a zip file."
+        }
+        return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
+    
+    # Connect to Rabbi`tMQ
+    
+    # The business logic should be implemented in the service class.
+    uploadService.CreateUpload(centre.Id, file)
+
+    
+    data = {
+        "title": "Upload complete",
+        "status": "success",
+    }
+    return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
+    
+@app.post('/')
+async def what(request: Request):
+    return {}
 
 @app.get('/centres', response_class=JSONResponse)
 async def home(request: Request):
@@ -61,74 +98,38 @@ async def CreateCentre(newCentre:  CentreCreate):
     return authenticationService.CreateCentre(newCentre)
 
 @app.post("/authenticate", response_class=JSONResponse)
-async def AuthenticateCentre(credentials: AuthCredentials):
-    return authenticationService.AuthenticateCentre(credentials)
+async def AuthenticateCentre(credentials: AuthCredentials, response: Response):
+    token = authenticationService.AuthenticateCentre(credentials) 
+    response.set_cookie(key='session_id', value=token)
+    # return RedirectResponse(url = "/")
 
-@app.get("/home", response_class=HTMLResponse)
-async def home(request: Request):
-    data = {
-        "page": "Home page",
-    }
-    return templates.TemplateResponse("index.html", {"request": request, "data": data})
 
-@app.get("/", response_class=HTMLResponse)
-async def login(request: Request):
-    '''This is the root page of our portal, this needs to be replaced with a log-in page.'''
-    data = {
-        "page": "Login",
-    }
-    return templates.TemplateResponse("login.html", {"request": request, "data": data})
+# @app.get('/upload')
+# async def upload(request = Depends(jwtBearer)):
+#     return {}
 
-@app.get('/upload')
-async def upload(request = Depends(jwtBearer)):
-    return {}
-
-@app.post('/upload')
-async def upload(file: UploadFile, request = Depends(jwtBearer)):
-    print(file.file.read())
-    print(request)
-    id = str(uuid.uuid4())
-    print(id)
+# @app.post('/upload')
+# async def upload(file: UploadFile, request = Depends(jwtBearer)):
+#     print(file.file.read())
+#     print(request)
+#     id = str(uuid.uuid4())
+#     print(id)
 
     
 
 
-@app.get("/me")
-def protected_route(bla = Depends(jwtBearer)):
-    user = authenticationService.GetCentreById(bla)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+# @app.get("/me")
+# def protected_route(bla = Depends(jwtBearer)):
+#     user = authenticationService.GetCentreById(bla)
+#     if user is None:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    return user
+#     return user
 
 
 @app.get("/download", response_class=HTMLResponse)
-async def home(request: Request):
+async def home(request: Request=Depends(jwtBearer)):
     data = {
         "page": "Download page",
     }
     return templates.TemplateResponse("download.html", {"request": request, "data": data})
-
-@app.post('/uploadfile', response_class=HTMLResponse)
-async def create_upload_file(request: Request, file: UploadFile):
-    if not os.path.exists(UPLOAD_DIR):
-        os.makedirs(UPLOAD_DIR)
-    if file.content_type != "application/zip":
-        data = {
-            "title": "Upload failed",
-            "status": "failed",
-            "message": "File type not supported. Please upload a zip file."
-        }
-        return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
-    file_location = f'{UPLOAD_DIR}/{file.filename}'
-    with open(file_location, 'wb+') as file_object:
-        file_object.write(file.file.read())
-    time.sleep(3)
-    # TODO: Run pipeline steps
-
-    data = {
-        "title": "Upload complete",
-        "status": "success",
-    }
-    return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
-    

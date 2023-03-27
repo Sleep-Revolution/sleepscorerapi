@@ -22,7 +22,7 @@
     
     <h3>Upload a zip file</h3>
 
-    <form action="/uploadfile" enctype="multipart/form-data" method="post" autocomplete="off" id="upload-form">
+    <form  action="home" enctype="multipart/form-data" autocomplete="off" id="upload-form">
       <div class="bg-light p-5 rounded-lg m-3">
           <label for="file" class="form-label">File Input</label>
           <input class="form-control" type="file" id="file" name="file">
@@ -48,18 +48,36 @@
 
 {% block extrascripts %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js" integrity="sha512-wT7uPE7tOP6w4o28u1DN775jYjHQApdBnib5Pho4RB0Pgd9y7eSkAV1BTqQydupYDB9GBhTcQQzyNMPMV3cAew==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
   $(document).ready(function () {
-      $('#upload-form').on('submit', function (e) {
-          var fileInput = $('#file').val();
-
-          if (fileInput !== '') {
-              $('#upload-button').prop('disabled', true);
-              $('#upload-button .spinner-border').css('display', 'inline-block');
-          }
-      });
+    const form = $("#upload-form")
+    const fileInput = document.querySelector('input[type="file"]');
+    $('#upload-form').on('submit', function (e) {
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      e.preventDefault();
+      
+      fetch('/uploadfile', {
+        method: 'POST',
+        body: formData,
+        headers: {'Authorization': `Bearer ${Cookies.get('session_id')}`}
+      })
+    })
+    // $('#upload-form').on('submit', function (e) {
+    //     var fileInput = $('#file').val();
+    //     if (fileInput !== '') {
+    //         $('#upload-button').prop('disabled', true);
+    //         $('#upload-button .spinner-border').css('display', 'inline-block');
+    //     }
+    // });
   });
+
+
+
+  // });
 </script>
 
 {% endblock %}

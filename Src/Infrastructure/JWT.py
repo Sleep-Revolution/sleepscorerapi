@@ -2,6 +2,7 @@ import jwt
 from datetime import datetime, timedelta
 import os
 from fastapi import Request, HTTPException, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 def CreateAccessToken(CentreId: int) -> str:
@@ -17,6 +18,15 @@ def CreateAccessToken(CentreId: int) -> str:
 
     return token
 
+def ParseAccessToken(Token: str) -> int:
+    try:
+        payload = jwt.decode(Token, os.environ["JWT_KEY"], algorithms=["HS256"])
+        centreId = int(payload["centreId"])
+        return centreId
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+
 class JWTBearer(HTTPBearer):
     def __init__(self):
         super().__init__()
@@ -31,6 +41,5 @@ class JWTBearer(HTTPBearer):
                 return centreId
             except jwt.PyJWTError:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-
+                
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-

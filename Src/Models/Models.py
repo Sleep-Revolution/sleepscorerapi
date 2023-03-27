@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, LargeBinary
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey
 from pydantic import BaseModel
+from sqlalchemy.orm import relationship
 from Src.Models.Database import Base
 
 class Centre(Base):
@@ -8,16 +8,23 @@ class Centre(Base):
     Id = Column(Integer, primary_key=True, index=True)
     CentreName = Column(String, unique=True, index=True)
     ResponsibleEmail = Column(String, unique=True, index=True)
+    FolderLocation = Column(String, unique=True, index=True)
     PasswordHash = Column(LargeBinary)
     PasswordSalt = Column(LargeBinary)
-    
+
+    CentreUploads = relationship("CentreUpload", back_populates="Centre")
+
+
+class CentreUpload(Base):
+    __tablename__ = "CentreUploads"
+    Id = Column(Integer, primary_key=True, index=True)
+    CentreId = Column(Integer, ForeignKey("Centres.Id"))
+    Centre = relationship("Centre", back_populates="CentreUploads")
+
 class CentreCreate(BaseModel):
     CentreName: str
     ResponsibleEmail: str
     Password: str
 class AuthCredentials(BaseModel):
-    CentreName: str
+    Email: str
     Password: str
-
-class RecordingRequest(BaseModel):
-    s: str
