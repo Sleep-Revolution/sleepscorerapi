@@ -28,25 +28,26 @@ templates = Jinja2Templates(directory="templates")
 
 # Connection parameters
 jwtBearer = JWTBearer()
-connection_params = pika.ConnectionParameters(rabbit_mq_server, 5672, )
+creds = pika.PlainCredentials('server', 'server')
+connection_params = pika.ConnectionParameters(rabbit_mq_server, 5672, '/', creds)
 
 
-def foo():
+# def foo():
 
 
-    queue_name = 'my_queue'
+#     queue_name = 'files_ready_to_process'
 
-    # Connect to RabbitMQ
-    connection = pika.BlockingConnection(connection_params)
-    channel = connection.channel()
+    # # Connect to RabbitMQ
+    # connection = pika.BlockingConnection(connection_params)
+    # channel = connection.channel()
 
-    # Declare the queue
-    channel.queue_declare(queue=queue_name)
-
-    # Close the connection
-    connection.close()
-foo()
-
+    # # Declare the queue
+    # channel.queue_declare(queue=queue_name)
+    
+#     # Close the connection
+#     connection.close()
+# foo()
+# exit()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -81,6 +82,9 @@ async def upload(file: UploadFile, request = Depends(jwtBearer)):
     print(request)
     id = str(uuid.uuid4())
     print(id)
+
+    
+
 
 @app.get("/me")
 def protected_route(bla = Depends(jwtBearer)):
