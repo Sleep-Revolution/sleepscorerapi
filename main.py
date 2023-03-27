@@ -64,13 +64,20 @@ async def CreateCentre(newCentre:  CentreCreate):
 async def AuthenticateCentre(credentials: AuthCredentials):
     return authenticationService.AuthenticateCentre(credentials)
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/home", response_class=HTMLResponse)
 async def home(request: Request):
-    '''This is the root page of our portal, this needs to be replaced with a log-in page.'''
     data = {
         "page": "Home page",
     }
     return templates.TemplateResponse("index.html", {"request": request, "data": data})
+
+@app.get("/", response_class=HTMLResponse)
+async def login(request: Request):
+    '''This is the root page of our portal, this needs to be replaced with a log-in page.'''
+    data = {
+        "page": "Login",
+    }
+    return templates.TemplateResponse("login.html", {"request": request, "data": data})
 
 @app.get('/upload')
 async def upload(request = Depends(jwtBearer)):
