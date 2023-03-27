@@ -13,11 +13,14 @@
         <title>{% block title %}{% endblock %} Sleep Revolution Data Upload Portal</title>
         <link rel="icon" href="{{ url_for('static', path='img/icon.ico') }}">
 
+        {% block extrastyles %}{% endblock %}
+
         {% endblock %}
     </head>
     <body>
-
-        {% include 'include/navbar.html' %}
+        {% block navbar %}
+            {% include 'include/navbar.html' %}
+        {% endblock %}
           
             {% block page_content %}
             {% endblock %}
