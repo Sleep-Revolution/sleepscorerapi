@@ -4,6 +4,7 @@ from Src.Repositories.UploadsRepository import UploadRepository
 from hashids import Hashids
 import pika
 import os 
+import json
 
 UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
 
@@ -53,6 +54,11 @@ class UploadService:
         with open(fpath, 'wb+') as file_object:
             file_object.write(file.file.read())
 
+        body = {
+            'name':name,
+            'path': fpath,
+            'center': centreId
+        }
 
         connection = pika.BlockingConnection(self.connection_params)
         channel = connection.channel()
@@ -63,7 +69,7 @@ class UploadService:
         channel.basic_publish(
             exchange='',
             routing_key='task_queue',
-            body=fpath,
+            body=json.dumps(body),
             properties=pika.BasicProperties(
             delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
         ))
