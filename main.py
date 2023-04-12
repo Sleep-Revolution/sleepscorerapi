@@ -22,7 +22,8 @@ async def http_exception_handler(request, exc):
     return RedirectResponse('/login')
     # return templates.TemplateResponse("error.html", {"request": request, "error": exc})
 
-async def parse_cookie_header(request: Request, call_next):
+async def PreprocessRequest(request: Request, call_next):
+    request.state.host = request.client.host
     session_id = request.cookies.get("session_id")
     request.state.centre = None
     if not session_id:
@@ -33,9 +34,11 @@ async def parse_cookie_header(request: Request, call_next):
         request.state.centre = centre
     except Exception as e:
         return await call_next(request)
+
+
     return await call_next(request)
     
-app.middleware("http")(parse_cookie_header)
+app.middleware("http")(PreprocessRequest)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -85,9 +88,9 @@ async def create_upload_file(file: UploadFile = File(...), request: Request = De
     }
     return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
     
-@app.post('/')
-async def what(request: Request):
-    return {}
+# @app.post('/')
+# async def what(request: Request):
+#     return {}
 
 @app.get('/centres', response_class=JSONResponse)
 async def home(request: Request):
@@ -103,6 +106,17 @@ async def AuthenticateCentre(credentials: AuthCredentials, response: Response):
     response.set_cookie(key='session_id', value=token)
     # return RedirectResponse(url = "/")
 
+@app.get("/admin")
+async def AdminStuff(request: Request):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if not request.state.centre.IsAdministrator:
+        return {"message": "You are not admin lmao"}
+    else: 
+        return {"message": "You are an admin lmao!!!!!!!!!!!!!!!!!!!!!!!!"}
+    
+    # return RedirectResponse(url = "/")
 
 # @app.get('/upload')
 # async def upload(request = Depends(jwtBearer)):

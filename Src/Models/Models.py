@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey
+from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey, Boolean
 from pydantic import BaseModel
 from sqlalchemy.orm import relationship
 from Src.Models.Database import Base
@@ -9,6 +9,7 @@ class Centre(Base):
     CentreName = Column(String, unique=True, index=True)
     ResponsibleEmail = Column(String, unique=True, index=True)
     FolderLocation = Column(String, unique=True, index=True)
+    IsAdministrator = Column(Boolean)
     PasswordHash = Column(LargeBinary)
     PasswordSalt = Column(LargeBinary)
 
