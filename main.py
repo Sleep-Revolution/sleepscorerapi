@@ -25,6 +25,8 @@ async def http_exception_handler(request, exc):
 async def PreprocessRequest(request: Request, call_next):
     request.state.host = request.client.host
     session_id = request.cookies.get("session_id")
+    request.state.xforwarded = request.headers.get("X-Forwarded-For")
+
     request.state.centre = None
     if not session_id:
         return await call_next(request)
@@ -52,7 +54,7 @@ async def login(request: Request):
 
 @app.get('/me')
 async def getMyIp(request: Request):
-    return {'ip': request.state.host}
+    return {'ip': request.state.host, 'xfw': request.state.xforwarded}
 
 
 @app.get("/", response_class=HTMLResponse)
