@@ -56,8 +56,8 @@ class UploadService:
 
         body = {
             'name':name,
-            'path': fpath,
-            'center': centreId
+            'path': db_c.FolderLocation,
+            'centreId': centreId
         }
 
         connection = pika.BlockingConnection(self.connection_params)

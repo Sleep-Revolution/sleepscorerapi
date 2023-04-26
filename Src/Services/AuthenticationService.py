@@ -37,7 +37,7 @@ class AuthenticationService:
         # db_centre = self.AuthenticationRepository.GetCentreByName(centre.CentreName)
         db_centre = self.AuthenticationRepository.GetCentreByEmail(centre.Email)
         if(db_centre == None):
-            return False
+            raise ValueError("Credentials not found in our systems.")
         
         testHash = bcrypt.hashpw(centre.Password.encode('utf-8'), db_centre.PasswordSalt)
         if testHash != db_centre.PasswordHash:
