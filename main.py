@@ -50,6 +50,11 @@ async def login(request: Request):
     }
     return templates.TemplateResponse("login.html", {"request": request, "data": data})
 
+@app.get('/me')
+async def getMyIp(request: Request):
+    return {'ip': request.state.host}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     if not request.state.centre:
@@ -87,7 +92,7 @@ async def create_upload_file(file: UploadFile = File(...), request: Request = De
         "status": "success",
     }
     return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
-    
+
 # @app.post('/')
 # async def what(request: Request):
 #     return {}
