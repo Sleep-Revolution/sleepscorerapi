@@ -20,7 +20,10 @@
           </li>
         </ul>
         <div class="d-flex">
-          <a href="/download" class="btn btn-primary">Download desktop client</button>
+          {% if centre.IsAdministrator %}
+            <a href="/admin" class="btn btn-primary">Administration</a>
+          {% endif %}
+          <!-- <a href="/download" class="btn btn-primary">Download desktop client</button> -->
         </a>
         </div>
       </div>

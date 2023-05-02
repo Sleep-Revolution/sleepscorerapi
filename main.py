@@ -66,7 +66,7 @@ async def home(request: Request):
     data = {
         "page": "Home page",
     }
-    return templates.TemplateResponse("index.html", {"request": request, "data": data})
+    return templates.TemplateResponse("index.html", {"request": request, "data": data, "centre": request.state.centre})
 
 
 @app.post('/uploadfile', response_class=HTMLResponse)
@@ -82,9 +82,7 @@ async def create_upload_file(file: UploadFile = File(...), request: Request = De
             "message": "File type not supported. Please upload a zip file."
         }
         return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
-    
-    # Connect to Rabbi`tMQ
-    
+
     # The business logic should be implemented in the service class.
     uploadService.CreateUpload(centre.Id, file)
 
