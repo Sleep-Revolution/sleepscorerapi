@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
-from Src.Models.Models import CentreUpload
+from Src.Models.Models import CentreUpload, Centre, Nights
 
 
 class UploadRepository:
@@ -18,10 +18,23 @@ class UploadRepository:
             session.commit()
             session.refresh(newCentreUpload)
             return newCentreUpload
-
+    
     def GetAllUploadsForCentre(self, centreId):
         with self.Session() as session:
-            session.query(CentreUpload).filter(CentreUpload.CentreId == centreId).all()
+            return session.query(CentreUpload).filter(CentreUpload.CentreId == centreId).all()
+
+    def GetAllCentres(self):
+        with self.Session() as session:
+            centres = session.query(Centre).all()
+            for centre in centres:
+                centre.CentreUploads
+
+            return centres
+
+    def GetNightsForUpload(self, uploadId):
+        with self.Session() as session:
+            return session.query(Nights).filter(Nights.registry == uploadId).all()
+
 
     def DeleteUpload(self, uploadId):
         with self.Session() as session:
@@ -29,6 +42,6 @@ class UploadRepository:
             session.delete(centre)
             session.commit()
 
-    def GetUploadById(self, uploadId):
+    def GetUploadById(self, uploadId) -> CentreUpload:
         with self.Session() as session:
             return session.query(CentreUpload).filter(CentreUpload.Id == uploadId).one()

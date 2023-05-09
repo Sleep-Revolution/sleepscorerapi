@@ -17,15 +17,41 @@
     </div>
   </div>
 
+  <script>
+    function updateRecordingDetails() {
+      let centreId = "{{centre.Id}}"; // Get the centre ID value from your server-side code
+      if(centreId.length < 2){
+        centreId = "0" + centreId;
+      }
+      const recordingNumberInput = document.getElementById("recordingNumber"); // Get the recording number input element
+      let recordingNumber = recordingNumberInput.value; // Get the recording number value from the input element
+      if (recordingNumber < 10) {
+        recordingNumber = "0" + recordingNumber; // Add a leading zero if the recording number is less than 10
+      }
+      const recordingDetails = document.getElementById("recordingDetails"); // Get the recordingDetails div element
+      recordingDetails.innerHTML = `SRID: ${centreId}${recordingNumber}`; // Update the content of the recordingDetails div with the concatenated values
+    }
+  </script>
 
 <div class="container">
     <h3>Upload a zip file</h3>
 
     <form  action="home" enctype="multipart/form-data" autocomplete="off" id="upload-form">
-      <div class="bg-light p-5 rounded-lg m-3">
+      <div class="d-flex justify-content-between align-items-center">
+        
+        <div class="bg-light p-5 rounded-lg m-1 " >
           <label for="file" class="form-label">File Input</label>
           <input class="form-control" type="file" id="file" name="file">
+        </div>
+        <div class="bg-light p-3 rounded-lg m-3">
+          <label for ="recordingNumber" class="form-label">Recording Number</label>
+          <input class="form-control" type="number" id="recordingNumber" name="file" oninput="updateRecordingDetails()" />
       </div>
+      <div class="bg-light p-3 rounded-lg m-3" id="recordingDetails">
+        
+      </div> 
+    </div>
+
       <div class="bg-light rounded-lg m-3">
           <div class="d-grid gap-2">
               <button id="upload-button" class="btn btn-primary" type="submit">

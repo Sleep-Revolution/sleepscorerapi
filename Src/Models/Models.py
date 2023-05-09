@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey, Boolean
+import datetime
+from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey, Boolean, DateTime
 from pydantic import BaseModel
 from sqlalchemy.orm import relationship
 from Src.Models.Database import Base
@@ -19,8 +20,20 @@ class Centre(Base):
 class CentreUpload(Base):
     __tablename__ = "CentreUploads"
     Id = Column(Integer, primary_key=True, index=True)
+    RecordingNumber = Column(Integer)
     CentreId = Column(Integer, ForeignKey("Centres.Id"))
+    Timestamp = Column(DateTime, default=datetime.datetime.now())
+    Location = Column(String, unique=True)
     Centre = relationship("Centre", back_populates="CentreUploads")
+    Nights = relationship("Nights", back_populates="Upload")
+
+class Nights(Base):
+    __tablename__ = "Nights"
+    Id = Column(Integer, primary_key=True, index=True)
+    UploadId = Column(Integer, ForeignKey("CentreUploads.Id"))
+    NightNumber = Column(Integer)
+    Upload = relationship("CentreUpload", back_populates="")
+
 
 class CentreCreate(BaseModel):
     CentreName: str

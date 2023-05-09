@@ -111,15 +111,39 @@ async def AuthenticateCentre(credentials: AuthCredentials, response: Response):
     response.set_cookie(key='session_id', value=token)
     # return RedirectResponse(url = "/")
 
-@app.get("/admin")
+@app.get("/admin", response_class=HTMLResponse)
 async def AdminStuff(request: Request):
     if not request.state.centre:
         print("redirecting due to no creds")
         return RedirectResponse('/login')
-    if not request.state.centre.IsAdministrator:
-        return {"message": "You are not admin lmao"}
-    else: 
-        return {"message": "You are an admin lmao!!!!!!!!!!!!!!!!!!!!!!!!"}
+    if request.state.centre.IsAdministrator:
+        return templates.TemplateResponse("Admin/admin.html", {"request": request, "centre": request.state.centre})
+
+@app.get("/admin/uploads", response_class=HTMLResponse)
+async def UploadList(request: Request):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        return templates.TemplateResponse("Admin/uploads.html", {"request": request, "centre": request.state.centre, 'centres': uploadService.GetAllCentres()})
+
+@app.get("/admin/uploads/{id}", response_class=JSONResponse)
+async def UploadDetails(request: Request, id: int):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        upload = uploadService.GetUploadById()
+        return templates.TemplateResponse("Admin/uploads.html", {"request": request, "centre": request.state.centre, 'centres': uploadService.GetAllCentres()})
+
+@app.get("/rescan", response_class=JSONResponse)
+async def RescanLocations(request: Request):
+    uploadService.RescanLocations()
+    return {'a': 'b'}
+
+    #     return {"message": "You are not admin lmao"}
+    # else: 
+    #     return {"message": "You are an admin lmao!!!!!!!!!!!!!!!!!!!!!!!!"}
     
     # return RedirectResponse(url = "/")
 
