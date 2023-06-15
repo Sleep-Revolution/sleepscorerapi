@@ -153,11 +153,23 @@ async def ScanPage(request: Request, id: int):
     else:
         return RedirectResponse('/')
 
-@app.get("/rescan", response_class=JSONResponse)
-async def RescanLocations(request: Request):
-    uploadService.RescanLocations()
-    return {'a': 'b'}
+@app.post("/admin/uploads/{id}/nights", response_class=HTMLResponse)
+async def AddNights(request: Request, id: int):
+    form_data = request.form
 
+    # Process the form data
+    for key, value in form_data.items():
+        # Extract the values for each row
+        if key.startswith('ESR'):
+            esr = key.replace('ESR', '')
+            location = form_data.get(f'{esr}')
+            recording_quality = value
+
+            # Perform further processing or save the data to a file or database
+            # Example:
+            print(f"ESR: {esr}, Location: {location}, Recording Quality: {recording_quality}")
+        return RedirectResponse('/admin/uploads')
+    # Optionally, you can redirect the user to a different page after processing the form
     #     return {"message": "You are not admin lmao"}
     # else: 
     #     return {"message": "You are an admin lmao!!!!!!!!!!!!!!!!!!!!!!!!"}
