@@ -1,4 +1,6 @@
-from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, Response
+import json
+import os
+from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, Response, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -70,11 +72,12 @@ async def home(request: Request):
 
 
 @app.post('/uploadfile', response_class=HTMLResponse)
-async def create_upload_file(file: UploadFile = File(...), request: Request = Depends(jwtBearer)):
+async def create_upload_file(file: UploadFile = File(...), recordingNumber: int = Form(...), request: Request = Depends(jwtBearer)):
 
     centre = authenticationService.GetCentreById(request)
-    
-
+    if recordingNumber == -1:
+        raise ValueError("Recording number must be provided.")
+    print(recordingNumber)
     if file.content_type != "application/zip":
         data = {
             "title": "Upload failed",
@@ -84,14 +87,14 @@ async def create_upload_file(file: UploadFile = File(...), request: Request = De
         return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
 
     # The business logic should be implemented in the service class.
-    uploadService.CreateUpload(centre.Id, file)
+    await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
     
     data = {
         "title": "Upload complete",
         "status": "success",
     }
-    return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
+    return templates.TemplateResponse("index.html", {"request": request, "data": data})
 
 # @app.post('/')
 # async def what(request: Request):
@@ -117,7 +120,9 @@ async def AdminStuff(request: Request):
         print("redirecting due to no creds")
         return RedirectResponse('/login')
     if request.state.centre.IsAdministrator:
-        return templates.TemplateResponse("Admin/admin.html", {"request": request, "centre": request.state.centre})
+        preprocConsumers = len(uploadService.get_active_connections("dev_preprocessing_queue"))
+        procConsumers = len(uploadService.get_active_connections("dev_task_queue"))
+        return templates.TemplateResponse("Admin/admin.html", {"request": request, "centre": request.state.centre, "preprocConsumers": preprocConsumers, "procConsumers": procConsumers})
 
 @app.get("/admin/uploads", response_class=HTMLResponse)
 async def UploadList(request: Request):
@@ -133,8 +138,20 @@ async def UploadDetails(request: Request, id: int):
         print("redirecting due to no creds")
         return RedirectResponse('/login')
     if request.state.centre.IsAdministrator:
-        upload = uploadService.GetUploadById()
-        return templates.TemplateResponse("Admin/uploads.html", {"request": request, "centre": request.state.centre, 'centres': uploadService.GetAllCentres()})
+        upload = uploadService.GetUploadById(id)
+        nights = uploadService.RescanLocationsForUpload(id)
+        return templates.TemplateResponse("Admin/upload.html", {"request": request, "centre": request.state.centre, 'upload': upload, 'scannedNights': nights})
+
+@app.get("/admin/uploads/{id}/scan", response_class=JSONResponse)
+async def ScanPage(request: Request, id: int):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        upload = uploadService.GetUploadById(id)
+        return templates.TemplateResponse("Admin/upload_scan.html", {"request": request, "centre": request.state.centre, 'upload': upload})
+    else:
+        return RedirectResponse('/')
 
 @app.get("/rescan", response_class=JSONResponse)
 async def RescanLocations(request: Request):

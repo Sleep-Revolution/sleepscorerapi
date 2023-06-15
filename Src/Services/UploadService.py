@@ -1,4 +1,6 @@
+import io
 import re
+from zipfile import ZipFile
 from Src.Models.Models import Centre, CentreUpload
 from Src.Repositories.AuthenticationRepository import AuthenticationRepository 
 from Src.Repositories.UploadsRepository import UploadRepository
@@ -6,6 +8,8 @@ from hashids import Hashids
 import pika
 import os 
 import json
+
+import requests
 
 UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
 
@@ -24,6 +28,8 @@ class UploadService:
         self.individualNightWaitingRoom = os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM']
 
 
+    
+
     def GetUploadByName(self, name):
         uploadId = Hashids(salt=os.environ['HASHIDS_SALT']).decode(name)
         return self.UploadRepository.GetUploadById(uploadId)
@@ -39,41 +45,111 @@ class UploadService:
         return self.UploadRepository.GetAllCentres()
 
 
-    def CreateUpload(self, centreId, file):
+    async def CreateUpload(self, centreId, file, recordingNumber):
         db_c = self.AuthenticationRepository.GetCentreById(centreId)
         if not db_c:
-            raise ValueError(f"Centre with id {centreId}")
+            raise ValueError(f"Centre with id {centreId} does not exist")
 
         newCentreUpload =  CentreUpload()
         newCentreUpload.CentreId = centreId
+        newCentreUpload.RecordingNumber = recordingNumber
+        newCentreUpload.ESR = f'{str(centreId).zfill(2)}{str(recordingNumber).zfill(2)}'
+        newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.ESR)
+
         upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
         
-        hashids = Hashids(salt=os.environ['HASHIDS_SALT'])
-        name = hashids.encode(upload.Id)
-        fpath = os.path.join(UPLOAD_DIR,db_c.FolderLocation, name)
-        newCentreUpload.Location = os.path.join(db_c.FolderLocation, name)
+        # hashids = Hashids(salt=os.environ['HASHIDS_SALT'])
+        # name = hashids.encode(upload.Id)
+        # newCentreUpload.Location = os.path.join(db_c.FolderLocation, name)
+        fpath = os.path.join(UPLOAD_DIR,db_c.FolderLocation, newCentreUpload.ESR)
+
+        #if not exists, create path in individualnightwaitingroom for centre.
+        
         if not os.path.exists(fpath):
             os.makedirs(fpath)
-        fpath = os.path.join(fpath, file.filename)
+        
+        cpath = os.path.join(self.individualNightWaitingRoom, db_c.FolderLocation)
+        if not os.path.exists(cpath):
+            os.makedirs(cpath)
+        
+        # fpath = os.path.join(fpath, newC)
 
-        with open(fpath, 'wb+') as file_object:
-            file_object.write(file.file.read())
+        # with open(fpath, 'wb+') as file_object:
+        #     file_object.write(file.file.read())
+        zip_bytes = await file.read()
 
-        body = {
-            'name':name,
-            'path': db_c.FolderLocation,
-            'centreId': centreId
-        }
+        # Create an in-memory file-like object
+        zip_file = io.BytesIO(zip_bytes)
+
+        # Open the zip file
+        with ZipFile(zip_file, 'r') as zip_obj:
+            # Extract and save each file in the zip
+            dirs = zip_obj.infolist()
+            base_folder_names = set()
+
+            for file_info in zip_obj.infolist():
+                base_folder_name = os.path.dirname(file_info.filename)
+                base_folder_names.add(base_folder_name)
+
+            if len(base_folder_names) != 1:
+                raise ValueError({"message": "Invalid zip file. There should be only one base folder."})
+
+            base_folder_name = base_folder_names.pop()
+
+            for file_info in zip_obj.infolist():
+                if file_info.is_dir():
+                    continue
+                if not file_info.filename.startswith(f"{base_folder_name}/"):
+                    continue
+                file_content = zip_obj.read(file_info)
+                extracted_file_name = os.path.basename(file_info.filename)
+                
+                file_name = file_info.filename
+                # Save the file content or process it as needed
+                # For example, save it to disk
+                with open(os.path.join(fpath, extracted_file_name), "wb") as output_file:
+                    output_file.write(file_content)
+
+        # body = {
+        #     'name':upload.ESR,
+        #     'path': db_c.FolderLocation,
+        #     'centreId': centreId
+        # }
+        #  This is going in another place!
+        # connection = pika.BlockingConnection(self.connection_params)
+        # channel = connection.channel()
+        
+        # Declare the queue
+        # channel.queue_declare(queue=os.environ['TASK_QUEUE_NAME'], durable=True)
+        # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
+        # channel.basic_publish(
+        #     exchange='',
+        #     routing_key='task_queue',
+        #     body=json.dumps(body),
+        #     properties=pika.BasicProperties(
+        #     delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
+        # ))
+
+        # Close the connection
+        # connection.close()
     
     def verifyIsRecording(self, path):
         files = os.listdir(path)
         numNdb = len( list(filter(lambda x: x.lower()[-4:] == '.ndb', files)))
         numNdf = len( list(filter(lambda x: x.lower()[-4:] == '.ndf', files)))
         print(f"{path} has {numNdf} Ndf files and {numNdb} ndb files")
-        return True
+        reason = ""
+        if numNdb != 1:
+            reason += f"The Folder has {numNdb} ndb files, was expecting 1. "
+        if numNdf == 0:
+            reason += f"The folder has no Ndf files."
+
+        if reason != "" :
+            return False, reason
+        return True, ""
 
     def RescanLocation(self, path):
-        # Take location, and re scan it, location is a folder that has n folders, each of which has some amoujnt of ndb and ndf.
+        # Take location, and re scan it, location is a folder that has n folders, each of which has some amount of ndb and ndf.
         # p = os.path.join(path)
         folders = os.listdir(path)
         for folder in folders:
@@ -89,8 +165,17 @@ class UploadService:
         pass
 
     def RescanLocationsForUpload(self, uploadId):
-        upload = UploadRepository.GetUploadById(uploadId)
-        location = os.path.join(self.individualNightWaitingRoom, self.upload.Location)
+        upload = self.UploadRepository.GetUploadById(uploadId)
+        if not upload:
+            raise ValueError(f"No upload found with Id {uploadId}")
+        #find location of nights for centre.
+        location = os.path.join(self.individualNightWaitingRoom, upload.Centre.FolderLocation)
+        if not os.path.exists(location):
+            print("No location exists.")
+            return []
+        esrMatch = list(filter(lambda x: os.path.basename(x)[:4] == upload.ESR, os.listdir(location)))
+        
+        return [{'ESR': x, 'isValid': self.verifyIsRecording(os.path.join(location, x) )} for x in esrMatch] 
 
     def RescanLocations(self):
         for centre in os.listdir(self.individualNightWaitingRoom):
@@ -99,20 +184,23 @@ class UploadService:
                 self.RescanLocation(os.path.join(pwd, project))
 
 
-        #  This is going in another place!
-        # connection = pika.BlockingConnection(self.connection_params)
-        # channel = connection.channel()
         
-        # # Declare the queue
-        # channel.queue_declare(queue=os.environ['TASK_QUEUE_NAME'], durable=True)
-        # # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
-        # channel.basic_publish(
-        #     exchange='',
-        #     routing_key='task_queue',
-        #     body=json.dumps(body),
-        #     properties=pika.BasicProperties(
-        #     delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
-        # ))
 
-        # # Close the connection
-        # connection.close()
+
+
+    def get_active_connections(self, queue_name):
+        api_url = 'http://130.208.209.2:15672/api/queues/%2F/{0}'.format(queue_name)
+        auth = ('monitor', 'monitor')  # RabbitMQ default credentials
+
+        try:
+            response = requests.get(api_url, auth=auth)
+            if response.status_code == 200:
+                queue_info = response.json()
+                return queue_info['consumer_details']
+            else:
+                print('Error: {0} - {1}'.format(response.status_code, response.text))
+                return []
+        except requests.exceptions.RequestException as e:
+            print('Error: {0}'.format(str(e)))
+            return []
+            # text:'{"error":"not_authorised","reason":"Not management user"}'

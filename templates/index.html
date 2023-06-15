@@ -29,7 +29,7 @@
         recordingNumber = "0" + recordingNumber; // Add a leading zero if the recording number is less than 10
       }
       const recordingDetails = document.getElementById("recordingDetails"); // Get the recordingDetails div element
-      recordingDetails.innerHTML = `SRID: ${centreId}${recordingNumber}`; // Update the content of the recordingDetails div with the concatenated values
+      recordingDetails.innerHTML = `ESR${centreId}${recordingNumber}`; // Update the content of the recordingDetails div with the concatenated values
     }
   </script>
 
@@ -79,10 +79,11 @@
     const form = $("#upload-form")
     const fileInput = document.querySelector('input[type="file"]');
     $('#upload-form').on('submit', function (e) {
+      e.preventDefault()
       const file = fileInput.files[0];
       const formData = new FormData();
       formData.append('file', file);
-      
+      formData.append('recordingNumber', $("#recordingNumber").val())
       e.preventDefault();
       
       fetch('/uploadfile', {
