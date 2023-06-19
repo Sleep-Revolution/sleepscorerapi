@@ -30,7 +30,8 @@ class AuthenticationService:
         newCentre.ResponsibleEmail = centre.ResponsibleEmail
         newCentre.PasswordSalt = bcrypt.gensalt()
         newCentre.PasswordHash = bcrypt.hashpw(centre.Password.encode('utf-8'), newCentre.PasswordSalt)
-        newCentre.FolderLocation = f'ESADA/{newCentre.CentreName}'
+        newCentre.FolderLocation = f'{newCentre.CentreName}'
+        newCentre.IsAdministrator = False
         return self.AuthenticationRepository.CreateCentre(newCentre)
         
     def AuthenticateCentre(self, centre: AuthCredentials):

@@ -1,7 +1,7 @@
 import io
 import re
 from zipfile import ZipFile
-from Src.Models.Models import Centre, CentreUpload
+from Src.Models.Models import Centre, CentreUpload, Night
 from Src.Repositories.AuthenticationRepository import AuthenticationRepository 
 from Src.Repositories.UploadsRepository import UploadRepository
 from hashids import Hashids
@@ -110,29 +110,58 @@ class UploadService:
                 with open(os.path.join(fpath, extracted_file_name), "wb") as output_file:
                     output_file.write(file_content)
 
-        # body = {
-        #     'name':upload.ESR,
-        #     'path': db_c.FolderLocation,
-        #     'centreId': centreId
-        # }
-        #  This is going in another place!
-        # connection = pika.BlockingConnection(self.connection_params)
-        # channel = connection.channel()
         
-        # Declare the queue
-        # channel.queue_declare(queue=os.environ['TASK_QUEUE_NAME'], durable=True)
-        # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
-        # channel.basic_publish(
-        #     exchange='',
-        #     routing_key='task_queue',
-        #     body=json.dumps(body),
-        #     properties=pika.BasicProperties(
-        #     delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
-        # ))
-
-        # Close the connection
-        # connection.close()
+        #  This is going in another place!
+        
     
+    def addNightToUpload(self, uploadId: int, nightLocation:str, quality:str, metadata:str):
+        
+        db_u = self.UploadRepository.GetUploadById(uploadId)
+        if not db_u:
+            raise ValueError("No upload found for this night")
+
+        db_c = self.AuthenticationRepository.GetCentreById(db_u.CentreId)
+        if not db_c:
+            raise ValueError(f"Found upload that does not have a valid centre! Centre with id {db_u.CentreId} does not exist")
+
+
+        newNight = Night()
+        newNight.IsFaulty = False if quality == 'good'  else True
+        newNight.UploadId = uploadId
+        newNight.Location = nightLocation
+        newNight.metadata = metadata
+        newNight.NightNumber = int(nightLocation[-2:])
+
+        self.UploadRepository.AddNightToUpload(newNight)
+        # Id = Column(Integer, primary_key=True, index=True)
+        # UploadId = Column(Integer, ForeignKey("CentreUploads.Id"))
+        # NightNumber = Column(Integer)
+        # Location = Column(String)
+        # IsFaulty = Column(Boolean)
+        # Reviewed = Column(Boolean)
+        # Upload = relationship("CentreUpload", back_populates="")
+
+        body = {
+            'name': os.path.basename(nightLocation),
+            'path': db_c.FolderLocation,
+            'centreId': db_c.Id
+        }
+        connection = pika.BlockingConnection(self.connection_params)
+        channel = connection.channel()
+        # # Declare the queue
+        channel.queue_declare(queue=os.environ['TASK_QUEUE_NAME'], durable=True)
+        # # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
+        channel.basic_publish(
+            exchange='',
+            routing_key='task_queue',
+            body=json.dumps(body),
+            properties=pika.BasicProperties(
+            delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
+        ))
+        # # Close the connection
+        connection.close()
+
+
     def verifyIsRecording(self, path):
         files = os.listdir(path)
         numNdb = len( list(filter(lambda x: x.lower()[-4:] == '.ndb', files)))

@@ -25,17 +25,16 @@ class CentreUpload(Base):
     Timestamp = Column(DateTime, default=datetime.datetime.now())
     Location = Column(String, unique=True)
     Centre = relationship("Centre", back_populates="CentreUploads")
-    Nights = relationship("Nights", back_populates="Upload")
+    Nights = relationship("Night", back_populates="Upload")
     ESR = ""#f"{CentreId}{RecordingNumber}"
 
-class Nights(Base):
+class Night(Base):
     __tablename__ = "Nights"
     Id = Column(Integer, primary_key=True, index=True)
     UploadId = Column(Integer, ForeignKey("CentreUploads.Id"))
     NightNumber = Column(Integer)
     Location = Column(String)
     IsFaulty = Column(Boolean)
-    Reviewed = Column(Boolean)
     Upload = relationship("CentreUpload", back_populates="")
 
 

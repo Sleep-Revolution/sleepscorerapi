@@ -38,13 +38,16 @@
     
     {% if scannedNights|length > 0 %}
 
-      <form action="/upload" method="post" enctype="multipart/form-data">
+      <form action="/admin/upload/{{ upload.Id }}/nights" method="post" enctype="multipart/form-data">
+        <div class="form-hidden">
+          <input type="hidden" name="centre_id" value="{{ centre.Id }}">
+        </div>
         <table id="centres-table{{ centre.Id }}" class="table table-striped table-bordered">
           <thead>
             <tr>
               <th>Location</th>
-              <th>Recording Quality</th>
-              <th>Automatic check</th>
+              <th >Recording Quality</th>
+              <th>Info</th>
               <th>ESR</th>
             </tr>
           </thead>
@@ -54,13 +57,19 @@
                 <td>{{ upload.Centre.FolderLocation }}/{{ night.ESR }}</td>
                 <td>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="{{night.ESR}}" id="inlineRadio1-{{night.ESR}}" value="good">
-                    <label class="form-check-label" for="inlineRadio1">Ok</label>
+                    <input class="form-check-input" type="radio" name="{{centre.FolderLocation}}/{{night.ESR}}" id="inlineRadio1-{{night.ESR}}" value="good">
+                    <label class="form-check-label" for="inlineRadio1-{{night.ESR}}">Ok</label>
                   </div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="{{night.ESR}}" id="inlineRadio2-{{night.ESR}}" value="bad">
-                    <label class="form-check-label" for="inlineRadio2">Not Ok</label>
+                    <input class="form-check-input" type="radio" name="{{centre.FolderLocation}}/{{night.ESR}}" id="inlineRadio2-{{night.ESR}}" value="bad">
+                    <label class="form-check-label" for="inlineRadio2-{{night.ESR}}">Not Ok</label>
                   </div>
+                  <div class="form-inpyut form-check-inline">
+                    <label class="form-check-label" for="metadata-{{night.ESR}}">Notes</label>
+                    <!-- <input class="form-check-input" type="text" name="metadata/{{night.ESR}}" id="metadata-{{night.ESR}}"> -->
+                    <input type="text" class="form-control form-control-lg" name="metadata/{{night.ESR}}" id="metadata-{{night.ESR}}"  placeholder="Metadata for {{night.ESR}}">
+                  </div>
+                  
                 </td>
 
                 {% if night.isValid[0] %}
@@ -68,8 +77,8 @@
                   ✓
                 </td>
                 {% else %}
-                <td class="bg-danger">
-                  {{night.isValid[1]}}
+                <td class="bg-danger" data-toggle="tooltip" data-placement="left" title="{{night.isValid[1]}}">
+                  ✕
                 </td>
                 {% endif %}
                 <td>ESR{{ night.ESR }}</td>
@@ -80,39 +89,6 @@
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
 
-
-        <!-- <table id="centres-table{{ centre.Id }}" class="table table-striped table-bordered">
-            <thead>
-              <tr>
-                <th>Location</th>
-                <th>Recording Quality</th>
-                <th>Night Number</th>
-                <th>ESR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for night in scannedNights %}
-                <tr>
-                  <td>{{ night }}</td>
-                  <td>
-                    <div class="form-check form-check-inline">
-                      <input class="form-check-input" type="radio" name="inlineRadioOptions-{{night}}" id="inlineRadio1-{{night}}" value="ok">
-                      <label class="form-check-label" for="inlineRadio1">Ok</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                      <input class="form-check-input" type="radio" name="inlineRadioOptions-{{night}}" id="inlineRadio2-{{night}}" value="notOk">
-                      <label class="form-check-label" for="inlineRadio2">Not Ok</label>
-                    </div>
-                    
-                  </td>
-                  <td>
-                    
-                  </td>
-                  <td>{{ night }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-        </table> -->
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.min.js"></script>

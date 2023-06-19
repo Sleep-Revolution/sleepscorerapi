@@ -9,6 +9,7 @@ from Src.Services.AuthenticationService import AuthenticationService
 from Src.Services.UploadService import UploadService
 from Src.Infrastructure.JWT import JWTBearer, ParseAccessToken
 from Src.Models.Models import CentreCreate, AuthCredentials
+import ipaddress
 
 authenticationService = AuthenticationService()
 uploadService = UploadService()
@@ -28,7 +29,13 @@ async def PreprocessRequest(request: Request, call_next):
     request.state.host = request.client.host
     session_id = request.cookies.get("session_id")
     request.state.xforwarded = request.headers.get("X-Forwarded-For")
-
+    if request.state.xforwarded is not None:
+        request.state.onVPN = ipaddress.ip_address(request.headers.get("X-Forwarded-For")) in ipaddress.ip_network('192.168.209.0/24')
+        request.state.superAdmin = request.headers.get("X-Forwarded-For") in ['10.3.25.191']
+    else:
+        request.state.onVPN = ipaddress.ip_address(request.client.host) in ipaddress.ip_network('192.168.209.0/24')
+        request.state.superAdmin = request.client.host in ['10.3.25.191', '127.0.0.1']
+    
     request.state.centre = None
     if not session_id:
         return await call_next(request)
@@ -56,7 +63,7 @@ async def login(request: Request):
 
 @app.get('/me')
 async def getMyIp(request: Request):
-    return {'ip': request.state.host, 'xfw': request.state.xforwarded}
+    return {'ip': request.state.host, 'xfw': request.state.xforwarded, "onVpn": request.state.onVPN, "issup": request.state.superAdmin}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -153,22 +160,41 @@ async def ScanPage(request: Request, id: int):
     else:
         return RedirectResponse('/')
 
-@app.post("/admin/uploads/{id}/nights", response_class=HTMLResponse)
-async def AddNights(request: Request, id: int):
-    form_data = request.form
+@app.post("/admin/upload/{id}/nights", response_class=HTMLResponse)
+async def AddNights(id: int, request: Request):
+    form_data = await request.form()
+    form_data = list(form_data.items())
+    if form_data[0][0] != 'centre_id':
+        raise ValueError("Incorrect form received for nights.")
 
-    # Process the form data
-    for key, value in form_data.items():
+    centre_id = form_data[0][1]
+
+    form_data = form_data[1:]
+    metadata = list(filter(lambda x: 'metadata' in x[0], form_data))
+    qualdata = list(filter(lambda x: x not in metadata, form_data))
+
+    metadata.sort(key = lambda x: x[0])
+    qualdata.sort(key = lambda x: x[0])
+    
+    if len(metadata) != len(qualdata):
+        raise ValueError("Incorrect length of metadata and quality data.")
+
+    for md, qd in zip(metadata, qualdata):
+        if md[0].split('/')[1] != qd[0].split('/')[1]:
+            raise ValueError("Mismatch in tag for quality and metadata in adding nights. ")
+        loc = qd[0]
+        quality = qd[1]
+        mdata = md[1]
+        uploadService.addNightToUpload(id, loc, quality, mdata)
+
+    for nightLocation, quality in form_data[1:]:
         # Extract the values for each row
-        if key.startswith('ESR'):
-            esr = key.replace('ESR', '')
-            location = form_data.get(f'{esr}')
-            recording_quality = value
+        recording_quality = quality
 
-            # Perform further processing or save the data to a file or database
-            # Example:
-            print(f"ESR: {esr}, Location: {location}, Recording Quality: {recording_quality}")
-        return RedirectResponse('/admin/uploads')
+        # Perform further processing or save the data to a file or database
+        # Example:
+        print(f"Location: {nightLocation}, Recording Quality: {recording_quality}")
+        
     # Optionally, you can redirect the user to a different page after processing the form
     #     return {"message": "You are not admin lmao"}
     # else: 
