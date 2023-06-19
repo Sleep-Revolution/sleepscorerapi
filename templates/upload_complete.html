@@ -1,14 +1,14 @@
 
 {% extends "base.html" %}
 
-{% block title %} {{ data.title }} {% endblock %}
+{% block title %} {% endblock %}
 
 {% block page_content %}
 
 <div class="container mt-5">
   <div class="row">
       <div class="col-md-8 offset-md-2">
-          {% if data.status == "success" %}
+        {% if success %}
           <div class="alert alert-success text-center" role="alert">
               <h4 class="alert-heading">File upload successfully!</h4>
               <p>Your file has been successfully uploaded. Thank you for using the service.</p>
@@ -18,10 +18,9 @@
           <div class="alert alert-danger text-center" role="alert">
               <h4 class="alert-heading">File upload failed!</h4>
               <p>There was an error uploading your file.
-                {{ data.message }}
               </p>
+          </div>
           {% endif %}
-      </div>
   </div>
 </div>
 

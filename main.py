@@ -11,6 +11,8 @@ from Src.Infrastructure.JWT import JWTBearer, ParseAccessToken
 from Src.Models.Models import CentreCreate, AuthCredentials
 import ipaddress
 
+from Src.Infrastructure.ErrorMiddleware import ErrorMiddleware
+
 authenticationService = AuthenticationService()
 uploadService = UploadService()
 
@@ -51,6 +53,8 @@ async def PreprocessRequest(request: Request, call_next):
     
 app.middleware("http")(PreprocessRequest)
 
+app.add_middleware(ErrorMiddleware)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/login", response_class=HTMLResponse)
@@ -86,26 +90,32 @@ async def create_upload_file(file: UploadFile = File(...), recordingNumber: int 
         raise ValueError("Recording number must be provided.")
     print(recordingNumber)
     if file.content_type != "application/zip":
-        data = {
-            "title": "Upload failed",
-            "status": "failed",
-            "message": "File type not supported. Please upload a zip file."
-        }
-        return templates.TemplateResponse("upload_complete.html", {"request": request, "data": data})
+        # data = {
+        #     "title": "Upload failed",
+        #     "status": "failed",
+        #     "message": "File type not supported. Please upload a zip file."
+        # }
+        return RedirectResponse("/upload_complete?success=false", status_code=302)
 
+    print("->>>> Creating upload")
     # The business logic should be implemented in the service class.
-    await uploadService.CreateUpload(centre.Id, file, recordingNumber)
+    # await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
     
-    data = {
-        "title": "Upload complete",
-        "status": "success",
-    }
-    return templates.TemplateResponse("index.html", {"request": request, "data": data})
+    # data = {
+    #     "title": "Upload complete",
+    #     "status": "success",
+    # }
+    return RedirectResponse("/upload_complete?success=true", status_code=302)
 
 # @app.post('/')
 # async def what(request: Request):
 #     return {}
+
+@app.get('/upload_complete', response_class=HTMLResponse)
+async def uploadComplete(request: Request,  success: bool = False):
+    centre = request.state.centre
+    return templates.TemplateResponse("upload_complete.html", {"request": request, "centre": centre, 'success':success})
 
 @app.get('/centres', response_class=JSONResponse)
 async def home(request: Request):

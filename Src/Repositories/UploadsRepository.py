@@ -3,7 +3,6 @@ from sqlalchemy.orm import sessionmaker
 import os
 from Src.Models.Models import CentreUpload, Centre, Night
 
-
 class UploadRepository:
     def __init__(self, session=None):
         if not session:
