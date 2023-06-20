@@ -94,7 +94,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
         print("Got invalid recording.")
         raise ValueError("Recording number must be provided.")
 
-    print(recordingNumber, centre.request.state.xforwarded)
+    print(recordingNumber, centre.Id, request.state.xforwarded)
 
     if file.content_type != "application/zip":
         # data = {
