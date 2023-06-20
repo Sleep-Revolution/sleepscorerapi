@@ -87,18 +87,22 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
     # centre = authenticationService.GetCentreById(request)
     centre = request.state.centre
     if not centre:
+        print("Problem finding centre in request")
         raise ValueError("Centre required.")
-        
+
     if recordingNumber == -1:
+        print("Got invalid recording.")
         raise ValueError("Recording number must be provided.")
-    print(recordingNumber)
+
+    print(recordingNumber, centre.request.state.xforwarded)
+
     if file.content_type != "application/zip":
         # data = {
         #     "title": "Upload failed",
         #     "status": "failed",
         #     "message": "File type not supported. Please upload a zip file."
         # }
-        return RedirectResponse("/upload_complete?success=false", status_code=302)
+        return RedirectResponse("/upload_complete?success=false&reason=Incorrectfiletype", status_code=302)
 
     print("->>>> Creating upload")
     # The business logic should be implemented in the service class.
