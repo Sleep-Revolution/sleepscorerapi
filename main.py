@@ -102,7 +102,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
         #     "status": "failed",
         #     "message": "File type not supported. Please upload a zip file."
         # }
-        return RedirectResponse("/upload_complete?success=false&reason=Incorrectfiletype", status_code=302)
+        return RedirectResponse(f"/upload_complete?success=false&reason=Incorrectfiletype({file.content_type})", status_code=302)
 
     print("->>>> Creating upload")
     # The business logic should be implemented in the service class.
