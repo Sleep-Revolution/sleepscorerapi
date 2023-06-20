@@ -96,7 +96,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
 
     print(recordingNumber, centre.Id, request.state.xforwarded)
 
-    if file.content_type != "application/zip":
+    if file.content_type != "application/zip" and file.content_type != 'application/x-zip-compressed':
         # data = {
         #     "title": "Upload failed",
         #     "status": "failed",
