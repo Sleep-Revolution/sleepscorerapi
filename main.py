@@ -99,7 +99,7 @@ async def create_upload_file(file: UploadFile = File(...), recordingNumber: int 
 
     print("->>>> Creating upload")
     # The business logic should be implemented in the service class.
-    # await uploadService.CreateUpload(centre.Id, file, recordingNumber)
+    await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
     
     # data = {
