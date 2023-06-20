@@ -96,24 +96,20 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
 
     print(recordingNumber, centre.Id, request.state.xforwarded)
 
-    if file.content_type != "application/zip" and file.content_type != 'application/x-zip-compressed':
+    allowedFileTypes = ["application/zip", "application/x-zip-compressed"]
+    if file.content_type not in allowedFileTypes:
         # data = {
         #     "title": "Upload failed",
         #     "status": "failed",
         #     "message": "File type not supported. Please upload a zip file."
         # }
-        return RedirectResponse(f"/upload_complete?success=false&reason=Incorrectfiletype({file.content_type})", status_code=302)
+        return RedirectResponse(f"/upload_complete?success=false&reason=Incorrectfiletype({file.content_type}, expected {allowedFileTypes})", status_code=302)
+    else:
+        print("->>>> Creating upload")
+        # The business logic should be implemented in the service class.
+        await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
-    print("->>>> Creating upload")
-    # The business logic should be implemented in the service class.
-    await uploadService.CreateUpload(centre.Id, file, recordingNumber)
-
-    
-    # data = {
-    #     "title": "Upload complete",
-    #     "status": "success",
-    # }
-    return RedirectResponse("/upload_complete?success=true", status_code=302)
+        return RedirectResponse("/upload_complete?success=true", status_code=302)
 
 # @app.post('/')
 # async def what(request: Request):
