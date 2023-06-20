@@ -153,7 +153,7 @@ class UploadService:
         # # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
         channel.basic_publish(
             exchange='',
-            routing_key='task_queue',
+            routing_key=os.environ['TASK_QUEUE_NAME'],
             body=json.dumps(body),
             properties=pika.BasicProperties(
             delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE

@@ -83,9 +83,12 @@ async def home(request: Request):
 
 
 @app.post('/uploadfile', response_class=HTMLResponse)
-async def create_upload_file(file: UploadFile = File(...), recordingNumber: int = Form(...), request: Request = Depends(jwtBearer)):
-
-    centre = authenticationService.GetCentreById(request)
+async def create_upload_file(request: Request, file: UploadFile = File(...), recordingNumber: int = Form(...)):
+    # centre = authenticationService.GetCentreById(request)
+    centre = request.state.centre
+    if not centre:
+        raise ValueError("Centre required.")
+        
     if recordingNumber == -1:
         raise ValueError("Recording number must be provided.")
     print(recordingNumber)
