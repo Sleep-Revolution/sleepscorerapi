@@ -60,8 +60,8 @@
                   Submit
               </button>
           </div>
-          <div class="progress m-3">
-            <div id="uploadprogress" class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: 0%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0%</div>
+          <div id="progressdiv" style="display:none"class="progress m-3">
+            <div id="uploadprogress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0%</div>
           </div>
         </div>
   </form>
@@ -118,6 +118,7 @@
           const progress = Math.round((event.loaded / event.total) * 100);
           // console.log('Upload Progress:', progress + '%');
           const progressBar = document.getElementById('uploadprogress');
+          document.getElementById("progressdiv").style.display='block'
           progressBar.style.width = progress + '%';
           progressBar.innerText = progress + '%';
           progressBar.setAttribute('aria-valuenow', `${progress}%`);
