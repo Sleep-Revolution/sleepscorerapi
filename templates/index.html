@@ -60,7 +60,10 @@
                   Submit
               </button>
           </div>
-      </div>
+          <div class="progress m-3">
+            <div id="uploadprogress" class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: 0%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0%</div>
+          </div>
+        </div>
   </form>
 
 
@@ -78,27 +81,60 @@
   $(document).ready(function () {
     const form = $("#upload-form")
     const fileInput = document.querySelector('input[type="file"]');
+    // $('#upload-form').on('submit', function (e) {
+    //   e.preventDefault()
+    //   const file = fileInput.files[0];
+    //   const formData = new FormData();
+    //   formData.append('file', file);
+    //   formData.append('recordingNumber', $("#recordingNumber").val())
+    //   e.preventDefault();
+    //   $('#loadingSpinner').show()
+    //   fetch('/uploadfile', {
+    //     method: 'POST',
+    //     body: formData,
+    //     headers: {'Authorization': `Bearer ${Cookies.get('session_id')}`}
+    //   }).then((response)=>{
+    //     console.log(response.status)
+    //     if(response.status >299){
+    //       window.location = "/upload_complete?success=false"
+    //     } else {
+    //       window.location = "upload_complete?success=true"
+    //     }
+    //   })
+    // })
     $('#upload-form').on('submit', function (e) {
-      e.preventDefault()
+      e.preventDefault();
       const file = fileInput.files[0];
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('recordingNumber', $("#recordingNumber").val())
-      e.preventDefault();
-      $('#loadingSpinner').show()
-      fetch('/uploadfile', {
-        method: 'POST',
-        body: formData,
-        headers: {'Authorization': `Bearer ${Cookies.get('session_id')}`}
-      }).then((response)=>{
-        console.log(response.status)
-        if(response.status >299){
-          window.location = "/upload_complete?success=false"
-        } else {
-          window.location = "upload_complete?success=true"
+      formData.append('recordingNumber', $("#recordingNumber").val());
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/uploadfile');
+      xhr.setRequestHeader('Authorization', `Bearer ${Cookies.get('session_id')}`);
+
+      xhr.upload.addEventListener('progress', function (event) {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          // console.log('Upload Progress:', progress + '%');
+          const progressBar = document.getElementById('uploadprogress');
+          progressBar.style.width = progress + '%';
+          progressBar.innerText = progress + '%';
+          progressBar.setAttribute('aria-valuenow', `${progress}%`);
+          // Update your progress UI here if needed
         }
-      })
-    })
+      });
+
+        xhr.onload = function () {
+          if (xhr.status > 299) {
+            window.location = "/upload_complete?success=false";
+          } else {
+            window.location = "upload_complete?success=true";
+          }
+        };
+
+        xhr.send(formData);
+      });
     // $('#upload-form').on('submit', function (e) {
     //     var fileInput = $('#file').val();
     //     if (fileInput !== '') {
