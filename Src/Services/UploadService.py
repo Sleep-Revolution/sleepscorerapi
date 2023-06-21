@@ -95,7 +95,7 @@ class UploadService:
                 raise ValueError({"message": "Invalid zip file. There should be only one base folder."})
 
             base_folder_name = base_folder_names.pop()
-
+            print(f"~\tBase folder: {base_folder_name}")
             for file_info in zip_obj.infolist():
                 if file_info.is_dir():
                     continue
