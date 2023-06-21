@@ -105,7 +105,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
         # }
         return RedirectResponse(f"/upload_complete?success=false&reason=Incorrectfiletype({file.content_type}, expected {allowedFileTypes})", status_code=302)
     else:
-        print("->>>> Creating upload")
+        print(f"->>>> Creating upload with {file.name}")
         # The business logic should be implemented in the service class.
         await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
