@@ -101,6 +101,7 @@ class UploadService:
                     continue
                 if not file_info.filename.startswith(f"{base_folder_name}/"):
                     continue
+                print(f"\t z:{file_info.filename}")
                 file_content = zip_obj.read(file_info)
                 extracted_file_name = os.path.basename(file_info.filename)
                 
