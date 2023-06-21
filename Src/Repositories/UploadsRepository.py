@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy.pool import QueuePool
 from sqlalchemy.orm import sessionmaker
 import os
 from Src.Models.Models import CentreUpload, Centre, Night
@@ -6,7 +7,16 @@ from Src.Models.Models import CentreUpload, Centre, Night
 class UploadRepository:
     def __init__(self, session=None):
         if not session:
-            self.engine = create_engine(os.environ['SLEEPSCORER_DB_URL'])
+            # self.engine = create_engine(os.environ['SLEEPSCORER_DB_URL'])
+            # self.Session = sessionmaker(bind=self.engine)
+            self.engine = create_engine(
+                os.environ['SLEEPSCORER_DB_URL'],
+                poolclass=QueuePool,
+                pool_size=10,  # Set an appropriate pool size for your application
+                max_overflow=20,# Set the maximum number of connections allowed to overflow
+                pool_recycle=60
+
+            )
             self.Session = sessionmaker(bind=self.engine)
         else:
             self.Session = session
