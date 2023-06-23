@@ -2,12 +2,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import os
 from Src.Models.Models import Centre
-
+from sqlalchemy.pool import QueuePool
 
 class AuthenticationRepository:
     def __init__(self, session=None):
         if not session:
-            self.engine = create_engine(os.environ['SLEEPSCORER_DB_URL'])
+            # self.engine = create_engine(os.environ['SLEEPSCORER_DB_URL'])
+            self.engine = create_engine(os.environ['SLEEPSCORER_DB_URL'], poolclass=QueuePool, pool_recycle=3600)
+
             self.Session = sessionmaker(bind=self.engine)
         else:
             self.Session = session
