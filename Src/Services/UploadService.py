@@ -8,7 +8,7 @@ from hashids import Hashids
 import pika
 import os 
 import json
-
+from pyzabbix import ZabbixMetric, ZabbixSender
 import requests
 
 UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
@@ -111,7 +111,17 @@ class UploadService:
                 with open(os.path.join(fpath, extracted_file_name), "wb") as output_file:
                     output_file.write(file_content)
 
-        
+        zabbix_server = '130.208.209.7'
+
+        # Create metrics
+        metrics = [ZabbixMetric('sleepwell.sleep.ru.is', 'ESADA.upload', db_c.CentreName)]
+
+        # Create a ZabbixSender instance
+        zbx = ZabbixSender(zabbix_server)
+
+        # Send metrics to zabbix
+        zbx.send(metrics)
+
         #  This is going in another place!
         
     

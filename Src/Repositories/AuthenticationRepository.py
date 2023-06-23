@@ -33,7 +33,7 @@ class AuthenticationRepository:
             return session.query(Centre).filter(Centre.ResponsibleEmail == responsibleEmail).first()
 
 
-    def GetCentreById(self, centreId: int):
+    def GetCentreById(self, centreId: int) -> Centre:
         with self.Session() as session:
             return session.query(Centre).filter(Centre.Id == centreId).first()
 
