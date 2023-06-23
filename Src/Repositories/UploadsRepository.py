@@ -14,8 +14,7 @@ class UploadRepository:
                 poolclass=QueuePool,
                 pool_size=10,  # Set an appropriate pool size for your application
                 max_overflow=20,# Set the maximum number of connections allowed to overflow
-                pool_recycle=60
-
+                pool_recycle=3600
             )
             self.Session = sessionmaker(bind=self.engine)
         else:
