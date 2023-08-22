@@ -8,7 +8,7 @@ from hashids import Hashids
 import pika
 import os 
 import json
-from tqdm import tqdm
+# from tqdm import tqdm
 from pyzabbix import ZabbixMetric, ZabbixSender
 import requests
 from pyzabbix import ZabbixMetric, ZabbixSender
@@ -189,11 +189,11 @@ class UploadService:
         with ZipFile(zip_file, 'r') as zip_obj:
             file_list = zip_obj.infolist()
             # Create a progress bar using tqdm
-            with tqdm(total=len(file_list), desc="Extracting files", unit="file") as pbar:
-                for file_info in file_list:
-                    extracted_file_name = os.path.join(fpath, file_info.filename)
-                    zip_obj.extract(file_info, fpath)
-                    pbar.update(1)  # Update the progress bar
+            # with tqdm(total=len(file_list), desc="Extracting files", unit="file") as pbar:
+            for file_info in file_list:
+                extracted_file_name = os.path.join(fpath, file_info.filename)
+                zip_obj.extract(file_info, fpath)
+                    # pbar.update(1)  # Update the progress bar
 
 
         # Open the zip file
