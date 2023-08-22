@@ -1,0 +1,124 @@
+{% set random_num = range(1,9)|random %}
+
+{% extends "base.html" %}
+
+{% block page_content %}
+<div class="container col-xxl-8 px-1 py-1">
+    <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
+      
+      <div class="col-md-6">
+        <h4 class="display-6 fw-bold lh-1 mb-3">Data Upload Portal</h4>
+        <p class="lead">Upload a zip file with a set of recordings in nox format. </p>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateDatasetDetails() {
+      let centreId = "{{centre.Id}}"; // Get the centre ID value from your server-side code
+      if(centreId.length < 2){
+        centreId = "0" + centreId;
+      }
+    }
+  </script>
+
+<div class="container">
+    <h3>Upload a zip file</h3>
+
+    <form  action="home" enctype="multipart/form-data" autocomplete="off" id="upload-form">
+      <div class="d-flex justify-content-between align-items-center">
+        
+        <div class="bg-light p-5 rounded-lg m-1 " >
+          <label for="file" class="form-label">File Input</label>
+          <input class="form-control" type="file" id="file" name="file">
+        </div>
+        <div class="bg-light p-3 rounded-lg m-3">
+          <label for ="datasetName" class="form-label">Dataset Name</label>
+          <input class="form-control" type="text" id="datasetName" name="file" oninput="updateDatasetDetails()" />
+      </div>
+      <div class="bg-light p-3 rounded-lg m-3" id="recordingDetails">
+        
+      </div> 
+    </div>
+
+      <div class="bg-light rounded-lg m-3">
+          <div class="d-grid gap-2">
+              <button id="upload-button" class="btn btn-primary" type="submit">
+                  <i class="bx bxs-cloud-upload" style="font-size:1.4em;"></i>
+                  <span id="loadingSpinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none;"></span>
+                  Submit
+              </button>
+          </div>
+          <div id="progressdiv" style="display:none"class="progress m-3">
+            <div id="uploadprogress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0%</div>
+          </div>
+        </div>
+  </form>
+
+
+    
+    
+</div>
+
+{% endblock %}
+
+
+{% block extrascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js" integrity="sha512-wT7uPE7tOP6w4o28u1DN775jYjHQApdBnib5Pho4RB0Pgd9y7eSkAV1BTqQydupYDB9GBhTcQQzyNMPMV3cAew==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  $(document).ready(function () {
+    const form = $("#upload-form")
+    const fileInput = document.querySelector('input[type="file"]');
+    
+    $('#upload-form').on('submit', function (e) {
+      e.preventDefault();
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('datasetName', $("#datasetName").val());
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/dataset');
+      xhr.setRequestHeader('Authorization', `Bearer ${Cookies.get('session_id')}`);
+
+      xhr.upload.addEventListener('progress', function (event) {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          // console.log('Upload Progress:', progress + '%');
+          const progressBar = document.getElementById('uploadprogress');
+          document.getElementById("progressdiv").style.display='block'
+          progressBar.style.width = progress + '%';
+          progressBar.innerText = progress + '%';
+          progressBar.setAttribute('aria-valuenow', `${progress}%`);
+          // Update your progress UI here if needed
+        }
+      });
+
+        xhr.onload = function () {
+          if (xhr.status > 299) {
+            window.location = "/upload_complete?success=false";
+          } else {
+            window.location = "upload_complete?success=true";
+          }
+        };
+
+        xhr.send(formData);
+      });
+    // $('#upload-form').on('submit', function (e) {
+    //     var fileInput = $('#file').val();
+    //     if (fileInput !== '') {
+    //         $('#upload-button').prop('disabled', true);
+    //         $('#upload-button .spinner-border').css('display', 'inline-block');
+    //     }
+    // });
+  });
+
+
+
+  // });
+</script>
+
+{% endblock %}

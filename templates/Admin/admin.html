@@ -1,32 +1,33 @@
 {% extends "base.html" %}
 
-{% block headstyles %}
-<style>
-  .card:hover{
-  transform: scale(1.01);
-  box-shadow: 0 10px 20px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
-}
-</style>
-{% endblock %}
 
 {% block page_content %}
+
 <div class="container">
   <div class="row mt-5">
-      <div class="col-md-5">
-          <h3>Welcome to admin {{centre.CentreName}}</h3>
-          <p>This is the administration panel for the sleep revolution</p>
-      </div>
-      <div class="col-md-7">
-          Active connections to the dev_preprocessing_queue: {{preprocConsumers}} <br />
-          Active connections to the dev_processing_queue: {{procConsumers}}
-      </div>
-      <div class="col-md-12">
-            <a href="admin/uploads">Check out the uploads</a>
-      </div>
+    <div class="col-md-5">
+      <h3>Welcome to admin {{centre.CentreName}}</h3>
+      <p>This is the administration panel for the sleep revolution</p>
+    </div>
+    <div class="col-md-7">
+      <p>
+        Active connections to the dev_preprocessing_queue: {{preprocConsumers}}
+        <br>
+        Active connections to the dev_processing_queue: {{procConsumers}}
+      </p>
+    </div>
+    <div class="col-md-12">
+      <a class="btn btn-primary m-2" href="admin/uploads">Check out the uploads</a>
+    </div>
+    <div class="col-md-12">
+      <a class="btn btn-primary m-2" href="admin/accounts">Check out the account control system.</a>
+    </div>
+    <div class="col-md-12">
+      <a class="btn btn-primary m-2" href="admin/dataset">Upload an entire dataset at once</a>
+    </div>
+    <div class="col-md-12">
+      <a class="btn btn-primary m-2" href="admin/datasets">Look at all the datasets</a>
+    </div>
   </div>
-  <h3></h3>
-  
-  
 </div>
-
 {% endblock %}

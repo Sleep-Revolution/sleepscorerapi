@@ -37,11 +37,17 @@ class Night(Base):
     IsFaulty = Column(Boolean)
     Upload = relationship("CentreUpload", back_populates="")
 
+# class Dataset(Base):
+#     __tablename__ = "Datasets"
+#     Id = Column(Integer, primary_key=True, index=True)
+#     Id = Column(String)
 
 class CentreCreate(BaseModel):
     CentreName: str
     ResponsibleEmail: str
     Password: str
+    
+
 class AuthCredentials(BaseModel):
     Email: str
     Password: str

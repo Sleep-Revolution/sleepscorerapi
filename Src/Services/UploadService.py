@@ -8,6 +8,8 @@ from hashids import Hashids
 import pika
 import os 
 import json
+from tqdm import tqdm
+from pyzabbix import ZabbixMetric, ZabbixSender
 import requests
 from pyzabbix import ZabbixMetric, ZabbixSender
 
@@ -172,21 +174,107 @@ class UploadService:
         # # Close the connection
         connection.close()
 
+    async def createDataset(self, file, datasetName):
+        
+        fpath = os.path.join(UPLOAD_DIR,"DATASETS", datasetName)
+        zip_bytes = await file.read()
+
+        # Create an in-memory file-like object
+        zip_file = io.BytesIO(zip_bytes)
+        # with ZipFile(zip_file, 'r') as zip_obj:
+        #     for file_info in zip_obj.infolist():
+        #         extracted_file_name = os.path.join(fpath, file_info.filename)
+        #         zip_obj.extract(file_info, fpath)
+        
+        with ZipFile(zip_file, 'r') as zip_obj:
+            file_list = zip_obj.infolist()
+            # Create a progress bar using tqdm
+            with tqdm(total=len(file_list), desc="Extracting files", unit="file") as pbar:
+                for file_info in file_list:
+                    extracted_file_name = os.path.join(fpath, file_info.filename)
+                    zip_obj.extract(file_info, fpath)
+                    pbar.update(1)  # Update the progress bar
+
+
+        # Open the zip file
+        # with ZipFile(zip_file, 'r') as zip_obj:
+        #     # Extract and save each file in the zip
+        #     dirs = zip_obj.infolist()
+        #     base_folder_names = set()
+
+        #     for file_info in zip_obj.infolist():
+        #         base_folder_name = os.path.dirname(file_info.filename)
+        #         base_folder_names.add(base_folder_name)
+
+            
+        #     for file_info in zip_obj.infolist():
+        #         print(f"\t z:{file_info.filename}")
+        #         file_content = zip_obj.read(file_info)
+        #         extracted_file_name = os.path.basename(file_info.filename)
+                
+        #         file_name = file_info.filename
+        #         # Save the file content or process it as needed
+        #         # For example, save it to disk
+        #         with open(os.path.join(fpath, extracted_file_name), "wb") as output_file:
+        #             output_file.write(file_content)
+
+    def listDatasets(self):
+        fpath = os.path.join(UPLOAD_DIR,"DATASETS")
+        return list(os.listdir(fpath))
+
+    def listDataset(self, name):
+        fpath = os.path.join(UPLOAD_DIR,"DATASETS", name)
+        r = []
+        for d in os.listdir(fpath):
+            dd = os.path.join(fpath, d)
+            x = self.verifyIsRecording(dd)
+            r.append({"recording": d, "valid": x})
+        return r
+
+
 
     def verifyIsRecording(self, path):
         files = os.listdir(path)
         numNdb = len( list(filter(lambda x: x.lower()[-4:] == '.ndb', files)))
         numNdf = len( list(filter(lambda x: x.lower()[-4:] == '.ndf', files)))
-        print(f"{path} has {numNdf} Ndf files and {numNdb} ndb files")
+        # print(f"{path} has {numNdf} Ndf files and {numNdb} ndb files")
         reason = ""
+        reason += f"The Folder has {numNdb} ndb files."
+        reason += f"The folder has {numNdf} Ndf files."
+        valid = True
         if numNdb != 1:
-            reason += f"The Folder has {numNdb} ndb files, was expecting 1. "
+            valid = False
         if numNdf == 0:
-            reason += f"The folder has no Ndf files."
+            valid = False
+        return valid, reason
 
-        if reason != "" :
-            return False, reason
-        return True, ""
+    def CreateJobsForDataset(self, datasetname):
+
+        connection = pika.BlockingConnection(self.connection_params)
+        channel = connection.channel()
+        # # Declare the queue
+        channel.queue_declare(queue=os.environ['TASK_QUEUE_NAME'], durable=True)
+
+        fpath = os.path.join(UPLOAD_DIR,"DATASETS", datasetname)
+
+        for d in os.listdir(fpath):
+            body = {
+                'name': d,
+                'path': f"DATASETS/{datasetname}",
+                'centreId': 9999
+            }
+        # # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
+            channel.basic_publish(
+                exchange='',
+                routing_key=os.environ['TASK_QUEUE_NAME'],
+                body=json.dumps(body),
+                properties=pika.BasicProperties(
+                delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
+            ))
+        # # Close the connection
+        connection.close()
+
+
 
     def RescanLocation(self, path):
         # Take location, and re scan it, location is a folder that has n folders, each of which has some amount of ndb and ndf.

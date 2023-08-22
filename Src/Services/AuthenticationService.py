@@ -17,19 +17,19 @@ class AuthenticationService:
     def GetCentreById(self, centreId: int) -> Centre:
         return self.AuthenticationRepository.GetCentreById(centreId)
 
-    def CreateCentre(self, centre: CentreCreate):
-        db_c = self.AuthenticationRepository.GetCentreByName(centre.CentreName)
+    def CreateCentre(self, CentreName: str, ResponsibleEmail: str, Password1:str, Password2:str):
+        db_c = self.AuthenticationRepository.GetCentreByName(CentreName)
         if db_c:
             raise ValueError("Centre with this name already exists")
-        db_c = self.AuthenticationRepository.GetCentreByEmail(centre.ResponsibleEmail)
+        db_c = self.AuthenticationRepository.GetCentreByEmail(ResponsibleEmail)
         if db_c:
             raise ValueError("Centre with this email already exists")
 
         newCentre =  Centre()
-        newCentre.CentreName = centre.CentreName
-        newCentre.ResponsibleEmail = centre.ResponsibleEmail
+        newCentre.CentreName = CentreName
+        newCentre.ResponsibleEmail = ResponsibleEmail
         newCentre.PasswordSalt = bcrypt.gensalt()
-        newCentre.PasswordHash = bcrypt.hashpw(centre.Password.encode('utf-8'), newCentre.PasswordSalt)
+        newCentre.PasswordHash = bcrypt.hashpw(Password1.encode('utf-8'), newCentre.PasswordSalt)
         newCentre.FolderLocation = f'{newCentre.CentreName}'
         newCentre.IsAdministrator = False
         return self.AuthenticationRepository.CreateCentre(newCentre)
