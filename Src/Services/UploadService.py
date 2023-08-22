@@ -11,6 +11,7 @@ import json
 from tqdm import tqdm
 from pyzabbix import ZabbixMetric, ZabbixSender
 import requests
+from pyzabbix import ZabbixMetric, ZabbixSender
 
 UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
 
@@ -122,7 +123,7 @@ class UploadService:
 
         # Send metrics to zabbix
         zbx.send(metrics)
-
+        #send_to_zabbix([Metric('sleepwell.sleep.ru.is', 'ESADA.upload',  db_c.CentreName)], zabbix_server, 10051)
         #  This is going in another place!
         
     

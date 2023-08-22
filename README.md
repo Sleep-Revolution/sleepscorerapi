@@ -2,7 +2,7 @@
 
 Uses FastAPI
 
-Make a virtual python environment.
+Make a virtual python environment.!
 
 Install requirements:
 
