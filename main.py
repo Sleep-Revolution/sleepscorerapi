@@ -124,9 +124,9 @@ async def uploadComplete(request: Request,  success: bool = False):
 async def home(request: Request):
     return [user.__dict__ for user in authenticationService.GetAllCentres() ]
 
-@app.post('/centres',  response_class=JSONResponse)
-async def CreateCentre(newCentre:  CentreCreate):
-    return authenticationService.CreateCentre(newCentre)
+# @app.post('/centres',  response_class=JSONResponse)
+# async def CreateCentre(newCentre:  CentreCreate):
+#     return authenticationService.CreateCentre(newCentre)
 
 @app.post("/authenticate", response_class=JSONResponse)
 async def AuthenticateCentre(credentials: AuthCredentials, response: Response):
@@ -151,12 +151,80 @@ async def UploadList(request: Request):
         return RedirectResponse('/login')
     if request.state.centre.IsAdministrator:
         return templates.TemplateResponse("Admin/uploads.html", {"request": request, "centre": request.state.centre, 'centres': uploadService.GetAllCentres()})
+    else:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    
+@app.get("/admin/dataset", response_class=HTMLResponse)
+async def UploadList(request: Request):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        return templates.TemplateResponse("Admin/dataset.html", {"request": request, "centre": request.state.centre, 'centres': uploadService.GetAllCentres()})
+    else:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+
+@app.post('/dataset', response_class=HTMLResponse)
+async def create_upload_dataset(request: Request, file: UploadFile = File(...), datasetName: str = Form(...)):
+    # centre = authenticationService.GetCentreById(request)
+    centre = request.state.centre
+    if not centre:
+        print("Problem finding centre in request")
+        raise ValueError("Centre required.")
+
+    if datasetName == "":
+        print("Got invalid dataset name.")
+        return RedirectResponse(f"/upload_complete?success=false&reason=Invalid dataset name", status_code=302)
+    
+    print(datasetName, centre.Id, request.state.xforwarded)
+
+    allowedFileTypes = ["application/zip", "application/x-zip-compressed"]
+    if file.content_type not in allowedFileTypes:
+        return RedirectResponse(f"/upload_complete?success=false&reason=Incorrectfiletype({file.content_type}, expected {allowedFileTypes})", status_code=302)
+    else:
+        print(f"->>>> Creating dataset with {datasetName}")
+        # The business logic should be implemented in the service class.
+        await uploadService.createDataset(file, datasetName)
+
+        return RedirectResponse("/admin/datasets", status_code=302)
+
+
+@app.get("/admin/datasets", response_class=HTMLResponse)
+async def GetAllDatasets(request: Request):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        ldatasets = uploadService.listDatasets()
+        return templates.TemplateResponse("Admin/datasets.html", {"request": request, "centre": request.state.centre, "datasets": ldatasets })
+
+@app.get("/admin/dataset/{name}", response_class=HTMLResponse)
+async def GetAllDatasets(request: Request, name:str):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        recordings = uploadService.listDataset(name)
+        return templates.TemplateResponse("Admin/datasetview.html", {"request": request, "centre": request.state.centre, "datasetName": name, "recordings": recordings })
+
+@app.post("/admin/dataset/{name}", response_class=HTMLResponse)
+async def CreateJobsForDataset(request:Request, name:str):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        uploadService.CreateJobsForDataset(name)
+        return templates.TemplateResponse("Admin/foooo")
+    else:
+        return RedirectResponse('/', status_code=302)
 
 @app.get("/admin/uploads/{id}", response_class=JSONResponse)
 async def UploadDetails(request: Request, id: int):
     if not request.state.centre:
         print("redirecting due to no creds")
-        return RedirectResponse('/login')
+        return RedirectResponse('/login', status_code=302)
     if request.state.centre.IsAdministrator:
         upload = uploadService.GetUploadById(id)
         nights = uploadService.RescanLocationsForUpload(id)
@@ -166,12 +234,32 @@ async def UploadDetails(request: Request, id: int):
 async def ScanPage(request: Request, id: int):
     if not request.state.centre:
         print("redirecting due to no creds")
-        return RedirectResponse('/login')
+        return RedirectResponse('/login', status_code=302)
     if request.state.centre.IsAdministrator:
         upload = uploadService.GetUploadById(id)
         return templates.TemplateResponse("Admin/upload_scan.html", {"request": request, "centre": request.state.centre, 'upload': upload})
     else:
-        return RedirectResponse('/')
+        return RedirectResponse('/', status_code=302)
+
+@app.get("/admin/accounts", response_class=JSONResponse)
+async def UploadDetails(request: Request):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        accounts = authenticationService.GetAllCentres()
+        return templates.TemplateResponse("Admin/accounts.html", {"request": request, "centre": request.state.centre, 'accounts': accounts })
+
+@app.post("/admin/add-account", response_class=RedirectResponse)
+async def AddAccount(request: Request,  CentreName: str = Form(...), ResponsibleEmail: str = Form(...), Password1: str = Form(...), Password2: str = Form(...)):
+    # huhh = e
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login', status_code=302)
+    if request.state.centre.IsAdministrator:
+        # code will go here.
+        authenticationService.CreateCentre(CentreName, ResponsibleEmail, Password1, Password2)
+        return RedirectResponse('/admin/accounts', status_code=302)
 
 @app.post("/admin/upload/{id}/nights", response_class=HTMLResponse)
 async def AddNights(id: int, request: Request):

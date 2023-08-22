@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block headstyles %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css">
+<style>
+  .card:hover{
+  transform: scale(1.01);
+  box-shadow: 0 10px 20px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+}
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="row">
+    {% for dataset in datasets %}
+    <div class="col-md-4">
+      <a href="/admin/dataset/{{ dataset }}">
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">{{ dataset}}</h5>
+            <!-- Add any additional data or elements for each dataset card -->
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

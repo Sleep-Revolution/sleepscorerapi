@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block headstyles %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css">
+<style>
+  .card:hover{
+  transform: scale(1.01);
+  box-shadow: 0 10px 20px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+}
+</style>
+{% endblock %}
+
+{% block page_content %}
+hmmm
+
+<div class="row">
+    <table id="centres-table{{ centre.Id }}" class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Location</th>
+            <th >Recording Quality</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for night in recordings %}
+            <tr>
+              <td>{{ night.recording }}</td>
+              
+
+              {% if night.valid[0] %}
+              <td>
+                ✓
+              </td>
+              {% else %}
+              <td class="bg-danger" data-toggle="tooltip" data-placement="left" title="{{night.valid[1]}}">
+                ✕
+              </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+</div>
+
+
+<button id="uploadButton" class="btn btn-danger" onclick="uploadData('{{datasetName}}')">Rip It!</button>
+
+<script>
+  function uploadData(name) {
+    var url = "/admin/dataset/" + name;
+
+    // Create a new form data object
+    var formData = new FormData();
+    fetch(url, {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (response.ok) {
+        // Handle successful response
+        console.log("Upload successful");
+      } else {
+        // Handle error response
+        console.error("Upload failed");
+      }
+    })
+    .catch(error => {
+      // Handle network or other errors
+      console.error("Upload error:", error);
+    });
+  }
+</script>
+
+
+
+{% endblock %}
