@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+
+{% block page_content %}
+<div class="container">
+    <div class="row">
+        {% for acc in accounts %}
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">{{ acc.CentreName }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ acc.ResponsibleEmail }}</h6>
+                    <p class="card-text">Additional information about the account goes here.</p>
+                    <a href="/admin/dataset/{{ acc.id }}" class="btn btn-primary">Edit Account</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form action="/admin/add-account" method="POST" class="card p-4">
+                <h2 class="mb-4">Add Account</h2>
+                <div class="form-group">
+                    <label for="CentreName">Centre Name</label>
+                    <input type="text" class="form-control" id="CentreName" name="CentreName" required>
+                </div>
+                <div class="form-group">
+                    <label for="ResponsibleEmail">Responsible Email</label>
+                    <input type="email" class="form-control" id="ResponsibleEmail" name="ResponsibleEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="Password1">Password</label>
+                    <input type="password" class="form-control" id="Password1" name="Password1" required>
+                </div>
+                <div class="form-group">
+                    <label for="Password2">Confirm Password</label>
+                    <input type="password" class="form-control" id="Password2" name="Password2" required>
+                </div>
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary">Add Account</button>
+                </div>
+            </form>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+    const password1 = document.getElementById('Password1');
+    const password2 = document.getElementById('Password2');
+
+    function validatePassword() {
+        if (password1.value !== password2.value) {
+            password2.setCustomValidity("Passwords must match");
+        } else {
+            password2.setCustomValidity("");
+        }
+    }
+
+    password1.addEventListener('input', validatePassword);
+    password2.addEventListener('input', validatePassword);
+</script>
+
+{% endblock %}
