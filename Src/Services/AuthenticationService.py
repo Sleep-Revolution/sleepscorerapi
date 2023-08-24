@@ -17,7 +17,7 @@ class AuthenticationService:
     def GetCentreById(self, centreId: int) -> Centre:
         return self.AuthenticationRepository.GetCentreById(centreId)
 
-    def CreateCentre(self, CentreName: str, ResponsibleEmail: str, Password1:str, Password2:str):
+    def CreateCentre(self, CentreName: str, ResponsibleEmail: str, Description:str, Password1:str, Password2:str):
         db_c = self.AuthenticationRepository.GetCentreByName(CentreName)
         if db_c:
             raise ValueError("Centre with this name already exists")
@@ -27,6 +27,7 @@ class AuthenticationService:
 
         newCentre =  Centre()
         newCentre.CentreName = CentreName
+        newCentre.Description = Description
         newCentre.ResponsibleEmail = ResponsibleEmail
         newCentre.PasswordSalt = bcrypt.gensalt()
         newCentre.PasswordHash = bcrypt.hashpw(Password1.encode('utf-8'), newCentre.PasswordSalt)
@@ -52,4 +53,5 @@ class AuthenticationService:
         testHash = bcrypt.hashpw(centre.Password.encode('utf-8'), db_centre.PasswordSalt)
         if testHash != db_centre.PasswordHash:
             raise ValueError("Credentials not found in our systems.")
+        self.AuthenticationRepository.SetLogin(db_centre.Id)
         return CreateAccessToken(db_centre.Id)

@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 from Src.Models.Models import Centre
 from sqlalchemy.pool import QueuePool
+from sqlalchemy.sql import func
 
 class AuthenticationRepository:
     def __init__(self, session=None):
@@ -47,6 +48,14 @@ class AuthenticationRepository:
             else:
                 raise ValueError("Centre not found with the provided ID")
         
+    def SetLogin(self, centreId: int):
+        with self.Session() as session:
+            centre = session.query(Centre).filter(Centre.Id == centreId).first()
+            if centre:
+                centre.LastLogin = func.now()
+                session.commit()
+            else:
+                raise ValueError("Centre not found with the provided ID")
 
     def CreateCentre(self, centre: Centre):
         with self.Session() as session:
