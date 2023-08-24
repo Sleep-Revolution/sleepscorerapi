@@ -1,6 +1,6 @@
 import json
 import os
-from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, Response, Form
+from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, Response, Form, Cookie
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -59,11 +59,23 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
-    '''This is the root page of our portal, this needs to be replaced with a log-in page.'''
     data = {
         "page": "Login",
     }
     return templates.TemplateResponse("login.html", {"request": request, "data": data})
+
+@app.post("/authenticate", response_class=JSONResponse)
+async def AuthenticateCentre(credentials: AuthCredentials, response: Response):
+    token = authenticationService.AuthenticateCentre(credentials) 
+    response.set_cookie(key='session_id', value=token)
+    # return RedirectResponse(url = "/")
+
+@app.get("/logout", response_class=RedirectResponse)
+async def logout():
+    # Clear the session cookie
+    response = RedirectResponse(url="/login")  # Adjust the URL as needed
+    response.delete_cookie(key="session_id")
+    return response
 
 @app.get('/me')
 async def getMyIp(request: Request):
@@ -98,11 +110,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
 
     allowedFileTypes = ["application/zip", "application/x-zip-compressed"]
     if file.content_type not in allowedFileTypes:
-        # data = {
-        #     "title": "Upload failed",
-        #     "status": "failed",
-        #     "message": "File type not supported. Please upload a zip file."
-        # }
+        
         return RedirectResponse(f"/upload_complete?success=false&reason=Incorrectfiletype({file.content_type}, expected {allowedFileTypes})", status_code=302)
     else:
         print(f"->>>> Creating upload with {file.filename}")
@@ -110,10 +118,6 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
         await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
         return RedirectResponse("/upload_complete?success=true", status_code=302)
-
-# @app.post('/')
-# async def what(request: Request):
-#     return {}
 
 @app.get('/upload_complete', response_class=HTMLResponse)
 async def uploadComplete(request: Request,  success: bool = False):
@@ -124,15 +128,39 @@ async def uploadComplete(request: Request,  success: bool = False):
 async def home(request: Request):
     return [user.__dict__ for user in authenticationService.GetAllCentres() ]
 
-# @app.post('/centres',  response_class=JSONResponse)
-# async def CreateCentre(newCentre:  CentreCreate):
-#     return authenticationService.CreateCentre(newCentre)
+@app.get("/admin/account/{id}", response_class=HTMLResponse)
+async def GetAccount(request: Request, id:int):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login')
+    if request.state.centre.IsAdministrator:
+        account = authenticationService.GetCentreById(id)
+        return templates.TemplateResponse("Admin/account.html", {"request": request, "centre": request.state.centre, "account": account })
 
-@app.post("/authenticate", response_class=JSONResponse)
-async def AuthenticateCentre(credentials: AuthCredentials, response: Response):
-    token = authenticationService.AuthenticateCentre(credentials) 
-    response.set_cookie(key='session_id', value=token)
-    # return RedirectResponse(url = "/")
+@app.post("/admin/reset-password/{account_id}", response_class=RedirectResponse)
+async def ChangePassword(
+    request: Request,
+    account_id: int,
+    NewPassword: str = Form(...),
+    ConfirmPassword: str = Form(...)
+):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login', status_code=302)
+    if request.state.centre.IsAdministrator:
+        # Validate old password, then update password if old password is correct
+        # Use the account_id to locate the account in the database
+        # Check if OldPassword matches the stored password hash
+        # If yes, update the password to NewPassword
+        authenticationService.UpdateCentrePassword(account_id, NewPassword)
+
+        return RedirectResponse(f'/admin/account/{account_id}', status_code=302)
+    else:
+        return RedirectResponse('/', status_code=302)
+        
+
+
+
 
 @app.get("/admin", response_class=HTMLResponse)
 async def AdminStuff(request: Request):
@@ -296,34 +324,6 @@ async def AddNights(id: int, request: Request):
         # Example:
         print(f"Location: {nightLocation}, Recording Quality: {recording_quality}")
         
-    # Optionally, you can redirect the user to a different page after processing the form
-    #     return {"message": "You are not admin lmao"}
-    # else: 
-    #     return {"message": "You are an admin lmao!!!!!!!!!!!!!!!!!!!!!!!!"}
-    
-    # return RedirectResponse(url = "/")
-
-# @app.get('/upload')
-# async def upload(request = Depends(jwtBearer)):
-#     return {}
-
-# @app.post('/upload')
-# async def upload(file: UploadFile, request = Depends(jwtBearer)):
-#     print(file.file.read())
-#     print(request)
-#     id = str(uuid.uuid4())
-#     print(id)
-
-    
-
-
-# @app.get("/me")
-# def protected_route(bla = Depends(jwtBearer)):
-#     user = authenticationService.GetCentreById(bla)
-#     if user is None:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-#     return user
 
 
 @app.get("/download", response_class=HTMLResponse)

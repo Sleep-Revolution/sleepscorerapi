@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+
+{% block page_content %}
+
+<form action="/admin/edit-account/{{ account.Id }}" method="POST" class="card p-4">
+    <h2 class="mb-4">Edit Account</h2>
+    <div class="form-group">
+        <label for="CentreName">Centre Name</label>
+        <input type="text" class="form-control" id="CentreName" name="CentreName" value="{{ account.CentreName }}" required>
+    </div>
+    <div class="form-group">
+        <label for="ResponsibleEmail">Responsible Email</label>
+        <input type="email" class="form-control" id="ResponsibleEmail" name="ResponsibleEmail" value="{{ account.ResponsibleEmail }}" required>
+    </div>
+    <div class="form-group mt-4">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </div>
+</form>
+
+<div class="card p-4 mt-4">
+    <form action="/admin/reset-password/{{ account.Id }}" method="POST">
+        <h2 class="mb-4">Reset Password</h2>
+        <div class="form-group">
+            <label for="NewPassword">New Password</label>
+            <div class="input-group">
+                <input type="password" class="form-control" id="NewPassword" name="NewPassword" required>
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-outline-secondary" id="showPassword">Show</button>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="ConfirmPassword">Confirm New Password</label>
+            <div class="input-group">
+                <input type="password" class="form-control" id="ConfirmPassword" name="ConfirmPassword" required>
+            </div>
+        </div>
+        <div class="form-group mt-4">
+            <button type="submit" class="btn btn-primary">Reset Password</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const showPasswordButton = document.getElementById('showPassword');
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+    
+    showPasswordButton.addEventListener('click', () => {
+        passwordFields.forEach(field => {
+            if (field.type === 'password') {
+                field.type = 'text';
+                showPasswordButton.textContent = 'Hide';
+            } else {
+                field.type = 'password';
+                showPasswordButton.textContent = 'Show';
+            }
+        });
+    });
+</script>
+
+{% endblock %}

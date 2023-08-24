@@ -37,6 +37,16 @@ class AuthenticationRepository:
         with self.Session() as session:
             return session.query(Centre).filter(Centre.Id == centreId).first()
 
+    def SetCentrePassword(self, centreId: int, passwordSalt, passwordHash):
+        with self.Session() as session:
+            centre = session.query(Centre).filter(Centre.Id == centreId).first()
+            if centre:
+                centre.PasswordSalt = passwordSalt
+                centre.PasswordHash = passwordHash
+                session.commit()
+            else:
+                raise ValueError("Centre not found with the provided ID")
+        
 
     def CreateCentre(self, centre: Centre):
         with self.Session() as session:

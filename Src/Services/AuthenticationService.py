@@ -33,7 +33,16 @@ class AuthenticationService:
         newCentre.FolderLocation = f'{newCentre.CentreName}'
         newCentre.IsAdministrator = False
         return self.AuthenticationRepository.CreateCentre(newCentre)
-        
+    
+    def UpdateCentrePassword(self, centreId: int, newPassword: str):
+        db_centre = self.AuthenticationRepository.GetCentreById(centreId)
+        if not db_centre:
+            raise ValueError("Credentials not found in our systems.")
+        salt = bcrypt.gensalt()
+        hash = bcrypt.hashpw(newPassword.encode('utf-8'), salt)
+        self.AuthenticationRepository.SetCentrePassword(centreId, salt, hash)
+
+
     def AuthenticateCentre(self, centre: AuthCredentials):
         # db_centre = self.AuthenticationRepository.GetCentreByName(centre.CentreName)
         db_centre = self.AuthenticationRepository.GetCentreByEmail(centre.Email)
