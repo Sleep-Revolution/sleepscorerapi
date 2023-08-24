@@ -86,8 +86,6 @@
         const Password = document.getElementById("password").value;
 
         // Perform your login logic here, e.g., send data to your server for validation
-        console.log("Email:", Email);
-        console.log("Password:", Password);
 
         postData('authenticate', {Email, Password}).then(data => {
             window.location.href = "/"
