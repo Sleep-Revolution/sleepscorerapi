@@ -3,17 +3,19 @@ from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey, Boolean
 from pydantic import BaseModel
 from sqlalchemy.orm import relationship
 from Src.Models.Database import Base
+from sqlalchemy.sql import func
 
 class Centre(Base):
     __tablename__ = "Centres"
     Id = Column(Integer, primary_key=True, index=True)
     CentreName = Column(String, unique=True, index=True)
+    Description = Column(String, unique=False, index=False)
     ResponsibleEmail = Column(String, unique=True, index=True)
     FolderLocation = Column(String, unique=True, index=True)
     IsAdministrator = Column(Boolean)
     PasswordHash = Column(LargeBinary)
     PasswordSalt = Column(LargeBinary)
-
+    LastLogin = Column(DateTime(timezone=True))
     CentreUploads = relationship("CentreUpload", back_populates="Centre")
 
 
@@ -44,6 +46,7 @@ class Night(Base):
 
 class CentreCreate(BaseModel):
     CentreName: str
+    Description: str
     ResponsibleEmail: str
     Password: str
     
