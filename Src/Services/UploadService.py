@@ -47,7 +47,7 @@ class UploadService:
         return self.UploadRepository.GetAllCentres()
 
 
-    async def CreateUpload(self, centreId, file, recordingNumber):
+    async def CreateUpload(self, centreId, file, recordingNumber, ParticipantAge, ParticipantHeight, ParticipantWeight, ParticipantSex, ParticipantMedicalHistory):
         db_c = self.AuthenticationRepository.GetCentreById(centreId)
         if not db_c:
             raise ValueError(f"Centre with id {centreId} does not exist")
@@ -57,6 +57,12 @@ class UploadService:
         newCentreUpload.RecordingNumber = recordingNumber
         newCentreUpload.ESR = f'{str(centreId).zfill(2)}{str(recordingNumber).zfill(2)}'
         newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.ESR)
+
+        newCentreUpload.ParticipantAge = ParticipantAge
+        newCentreUpload.ParticipantHeight = ParticipantHeight
+        newCentreUpload.ParticipantWeight = ParticipantWeight 
+        newCentreUpload.ParticipantSex = ParticipantSex
+        newCentreUpload.ParticipantMedicalHistory = ParticipantMedicalHistory
 
         upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
         

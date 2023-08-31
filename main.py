@@ -96,7 +96,12 @@ async def home(request: Request):
 
 
 @app.post('/uploadfile', response_class=HTMLResponse)
-async def create_upload_file(request: Request, file: UploadFile = File(...), recordingNumber: int = Form(...)):
+async def create_upload_file(request: Request, file: UploadFile = File(...), 
+        recordingNumber: int = Form(...), 
+        ParticipantAge: int=Form(...), ParticipantHeight: float = Form(...), 
+        ParticipantWeight: float = Form(...), ParticipantSex: str = Form(...), 
+        ParticipantMedicalHistory: str = Form(...)
+    ):
     # centre = authenticationService.GetCentreById(request)
     centre = request.state.centre
     if not centre:
@@ -116,12 +121,12 @@ async def create_upload_file(request: Request, file: UploadFile = File(...), rec
     else:
         print(f"->>>> Creating upload with {file.filename}")
         # The business logic should be implemented in the service class.
-        await uploadService.CreateUpload(centre.Id, file, recordingNumber)
+        await uploadService.CreateUpload(centre.Id, file, recordingNumber, ParticipantAge, ParticipantHeight, ParticipantWeight, ParticipantSex, ParticipantMedicalHistory)
 
         return RedirectResponse("/upload_complete?success=true", status_code=302)
 
 @app.get('/upload_complete', response_class=HTMLResponse)
-async def uploadComplete(request: Request,  success: bool = False):
+async def uploadComplete(request: Request,  success: str = "false"):
     centre = request.state.centre
     return templates.TemplateResponse("upload_complete.html", {"request": request, "centre": centre, 'success':success})
 
@@ -271,7 +276,7 @@ async def ScanPage(request: Request, id: int):
         return RedirectResponse('/', status_code=302)
 
 @app.get("/admin/accounts", response_class=JSONResponse)
-async def UploadDetails(request: Request):
+async def GetAllAccounts(request: Request):
     if not request.state.centre:
         print("redirecting due to no creds")
         return RedirectResponse('/login')

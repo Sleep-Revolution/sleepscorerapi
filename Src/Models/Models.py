@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey, Boolean, DateTime, Float
 from pydantic import BaseModel
 from sqlalchemy.orm import relationship
 from Src.Models.Database import Base
@@ -26,6 +26,11 @@ class CentreUpload(Base):
     CentreId = Column(Integer, ForeignKey("Centres.Id"))
     Timestamp = Column(DateTime, default=datetime.datetime.now())
     Location = Column(String, unique=True)
+    ParticipantWeight = Column(Float)
+    ParticipantHeight = Column(Float)
+    ParticipantAge = Column(Integer)
+    ParticipantSex = Column(String)
+    ParticipantMedicalHistory = Column(String)
     Centre = relationship("Centre", back_populates="CentreUploads")
     Nights = relationship("Night", back_populates="Upload")
     ESR = ""#f"{CentreId}{RecordingNumber}"
