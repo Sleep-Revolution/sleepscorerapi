@@ -11,6 +11,8 @@ class Centre(Base):
     CentreName = Column(String, unique=True, index=True)
     Description = Column(String, unique=False, index=False)
     ResponsibleEmail = Column(String, unique=True, index=True)
+    Prefix = Column(String)
+    MemberNumber = Column(Integer)
     FolderLocation = Column(String, unique=True, index=True)
     IsAdministrator = Column(Boolean)
     PasswordHash = Column(LargeBinary)

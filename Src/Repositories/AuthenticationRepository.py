@@ -33,6 +33,10 @@ class AuthenticationRepository:
         with self.Session() as session:
             return session.query(Centre).filter(Centre.ResponsibleEmail == responsibleEmail).first()
 
+    def GetCentreByPrefixAndMN(self, prefix, memberNumber):
+        with self.Session() as session:
+            return session.query(Centre).filter(Centre.Prefix == prefix, Centre.MemberNumber == memberNumber).first()
+
 
     def GetCentreById(self, centreId: int) -> Centre:
         with self.Session() as session:
@@ -63,3 +67,16 @@ class AuthenticationRepository:
             session.commit()
             session.refresh(centre)
             return centre
+
+    def UpdateCentre(self, centreId, newCentreName, newCentrePrefix, newCentreMemberNumber, newCentreResponsibleMail, newCentreDescription):
+        with self.Session() as session:
+            centre = session.query(Centre).filter(Centre.Id == centreId).first()
+            if centre:
+                centre.CentreName = newCentreName
+                centre.Prefix = newCentrePrefix
+                centre.MemberNumber = newCentreMemberNumber
+                centre.ResponsibleEmail = newCentreResponsibleMail
+                centre.Description = newCentreDescription
+                session.commit()
+            else:
+                raise ValueError("Centre not found with the provided ID")

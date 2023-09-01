@@ -45,17 +45,10 @@
                             <label for="email" class="form-label">Email address</label>
                             <input type="email" class="form-control" id="email" aria-describedby="emailHelp" required>
                         </div>
-                        
                         <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="password" required>
-                                <button class="btn btn-outline-secondary" type="button" id="show-password-toggle">
-                                    <i class="fas fa-eye"></i> <!-- Font Awesome icon for "eye" -->
-                                </button>
-                            </div>
+                            <input type="password" class="form-control" id="password" required>
                         </div>
-
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Login</button>
                         </div>
@@ -100,20 +93,8 @@
             console.log("errorr!!!!");
             console.log(e);
         })
-    });
 
-    const showPasswordToggle = document.getElementById("show-password-toggle");
-    const passwordInput = document.getElementById("password");
-    showPasswordToggle.addEventListener("click", function() {
-        if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            showPasswordToggle.innerHTML = '<i class="fas fa-eye-slash"></i>'; // Font Awesome icon for "eye-slash"
-        } else {
-            passwordInput.type = "password";
-            showPasswordToggle.innerHTML = '<i class="fas fa-eye"></i>'; // Font Awesome icon for "eye"
-        }
     });
-
 </script>
 
 {% endblock %}

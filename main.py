@@ -97,10 +97,7 @@ async def home(request: Request):
 
 @app.post('/uploadfile', response_class=HTMLResponse)
 async def create_upload_file(request: Request, file: UploadFile = File(...), 
-        recordingNumber: int = Form(...), 
-        ParticipantAge: int=Form(...), ParticipantHeight: float = Form(...), 
-        ParticipantWeight: float = Form(...), ParticipantSex: str = Form(...), 
-        ParticipantMedicalHistory: str = Form(...)
+        recordingNumber: int = Form(...)
     ):
     # centre = authenticationService.GetCentreById(request)
     centre = request.state.centre
@@ -121,7 +118,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
     else:
         print(f"->>>> Creating upload with {file.filename}")
         # The business logic should be implemented in the service class.
-        await uploadService.CreateUpload(centre.Id, file, recordingNumber, ParticipantAge, ParticipantHeight, ParticipantWeight, ParticipantSex, ParticipantMedicalHistory)
+        await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
         return RedirectResponse("/upload_complete?success=true", status_code=302)
 
@@ -285,15 +282,35 @@ async def GetAllAccounts(request: Request):
         return templates.TemplateResponse("Admin/accounts.html", {"request": request, "centre": request.state.centre, 'accounts': accounts, "RequestTime": datetime.datetime.now() })
 
 @app.post("/admin/add-account", response_class=RedirectResponse)
-async def AddAccount(request: Request,  CentreName: str = Form(...), ResponsibleEmail: str = Form(...), Description: str = Form(...), Password1: str = Form(...), Password2: str = Form(...)):
+async def AddAccount(request: Request,  
+    CentreName: str = Form(...), Prefix: str = Form(...), MemberNumber: int = Form(...),
+    ResponsibleEmail: str = Form(...), Description: str = Form(...),
+    Password1: str = Form(...), Password2: str = Form(...)):
     # huhh = e
     if not request.state.centre:
         print("redirecting due to no creds")
         return RedirectResponse('/login', status_code=302)
     if request.state.centre.IsAdministrator:
         # code will go here.
-        authenticationService.CreateCentre(CentreName, ResponsibleEmail, Description, Password1, Password2)
+        authenticationService.CreateCentre(CentreName, Prefix, MemberNumber, ResponsibleEmail, Description, Password1, Password2)
         return RedirectResponse('/admin/accounts', status_code=302)
+
+@app.post('/admin/edit-account/{centreId}', response_class=RedirectResponse)
+async def AddAccount(request: Request, centreId: int,
+    CentreName: str = Form(...), 
+    Prefix: str = Form(...), 
+    MemberNumber: int = Form(...),
+    ResponsibleEmail: str = Form(...), 
+    Description: str = Form(...)):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login', status_code=302)
+    if not request.state.centre.IsAdministrator:
+        return RedirectResponse('/', status_code=302)
+        # code will go here.
+    authenticationService.UpdateCentre(centreId, CentreName, Prefix, MemberNumber, ResponsibleEmail, Description)
+    return RedirectResponse('/admin/accounts', status_code=302)
+
 
 @app.post("/admin/upload/{id}/nights", response_class=HTMLResponse)
 async def AddNights(id: int, request: Request):
