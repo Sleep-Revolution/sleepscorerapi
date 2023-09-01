@@ -9,10 +9,27 @@
         <label for="CentreName">Centre Name</label>
         <input type="text" class="form-control" id="CentreName" name="CentreName" value="{{ account.CentreName }}" required>
     </div>
+    
+    <div class="form-group">
+        <label for="Prefix">Prefix</label>
+        <input type="text" class="form-control" id="Prefix" name="Prefix" value="{{ account.Prefix }}" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="MemberNumber">Member Number</label>
+        <input type="number" class="form-control" id="MemberNumber" name="MemberNumber" value="{{ account.MemberNumber }}" required>
+    </div>
+
     <div class="form-group">
         <label for="ResponsibleEmail">Responsible Email</label>
         <input type="email" class="form-control" id="ResponsibleEmail" name="ResponsibleEmail" value="{{ account.ResponsibleEmail }}" required>
     </div>
+
+    <div class="form-group">
+        <label for="Description">Description</label>
+        <input type="text" class="form-control" id="Description" name="Description" value="{{ account.Description }}" required>
+    </div>
+
     <div class="form-group mt-4">
         <button type="submit" class="btn btn-primary">Save Changes</button>
     </div>

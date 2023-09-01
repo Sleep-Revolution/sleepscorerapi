@@ -27,6 +27,9 @@
                         </a>
                     </div>
                     <h6 class="card-subtitle mb-2 text-muted">{{ acc.ResponsibleEmail }}</h6>
+
+                    <h7 class="card-subtitle mb-2 text-muted">{{ acc.Prefix }}{% if acc.MemberNumber < 10 %}0{% endif %}{{ acc.MemberNumber }}</h7>
+
                     <p class="card-text">{{ acc.Description }}</p>
                     <p id="lastLoggedIn{{ acc.Id }}" class="text-muted">
                         
@@ -73,10 +76,22 @@
                     <label for="CentreName">Centre Name</label>
                     <input type="text" class="form-control" id="CentreName" name="CentreName" required>
                 </div>
+
+                <div class="form-group">
+                    <label for="ResponsibleEmail">Prefix</label>
+                    <input type="text" class="form-control" id="Prefix" name="Prefix" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="MemberNumber">Member Number</label>
+                    <input type="number" class="form-control" id="MemberNumber" name="MemberNumber" required>
+                </div>
+
                 <div class="form-group">
                     <label for="ResponsibleEmail">Responsible Email</label>
                     <input type="email" class="form-control" id="ResponsibleEmail" name="ResponsibleEmail" required>
                 </div>
+                
                 <div class="form-group">
                     <label for="Description">Description</label>
                     <input type="text" class="form-control" id="Description" name="Description">
