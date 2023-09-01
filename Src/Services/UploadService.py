@@ -58,6 +58,12 @@ class UploadService:
         newCentreUpload.ESR = f'{str(centreId).zfill(2)}{str(recordingNumber).zfill(2)}'
         newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.ESR)
 
+        # newCentreUpload.ParticipantAge = ParticipantAge
+        # newCentreUpload.ParticipantHeight = ParticipantHeight
+        # newCentreUpload.ParticipantWeight = ParticipantWeight 
+        # newCentreUpload.ParticipantSex = ParticipantSex
+        # newCentreUpload.ParticipantMedicalHistory = ParticipantMedicalHistory
+
         upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
         
         # hashids = Hashids(salt=os.environ['HASHIDS_SALT'])
