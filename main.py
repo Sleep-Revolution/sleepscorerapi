@@ -1,6 +1,6 @@
 import json
 import os
-from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, Response, Form, Cookie
+from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, Response, Form, Cookie, Query
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -11,8 +11,9 @@ from Src.Services.UploadService import UploadService
 from Src.Infrastructure.JWT import JWTBearer, ParseAccessToken
 from Src.Models.Models import CentreCreate, AuthCredentials
 import ipaddress
-
+from Src.Infrastructure.Utils import format_last_logged_in
 from Src.Infrastructure.ErrorMiddleware import ErrorMiddleware
+import base64
 
 authenticationService = AuthenticationService()
 uploadService = UploadService()
@@ -95,6 +96,16 @@ async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "data": data, "centre": request.state.centre})
 
 
+def tagize(success, reason):
+    debugInfo = {"success":success, "reason": reason}
+    s = json.dumps(debugInfo)
+    return base64.b64encode(s.encode(ascii)).decode("ascii")
+def detag(tag):
+    base64_bytes = tag.encode("ascii")
+    sample_string_bytes = base64.b64decode(base64_bytes)
+    sample_string = sample_string_bytes.decode("ascii")
+    return json.loads(sample_string)
+
 @app.post('/uploadfile', response_class=HTMLResponse)
 async def create_upload_file(request: Request, file: UploadFile = File(...), 
         recordingNumber: int = Form(...)
@@ -113,19 +124,25 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
 
     allowedFileTypes = ["application/zip", "application/x-zip-compressed"]
     if file.content_type not in allowedFileTypes:
-        
-        return RedirectResponse(f"/upload_complete?success=false&reason=Incorrectfiletype({file.content_type}, expected {allowedFileTypes})", status_code=302)
+        print("Invalid file")
+        dbi = tagize(False, "Invalid file type.")
+        return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
     else:
         print(f"->>>> Creating upload with {file.filename}")
         # The business logic should be implemented in the service class.
         await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
-        return RedirectResponse("/upload_complete?success=true", status_code=302)
+        dbi = tagize(True, "")
+        return RedirectResponse("/upload_complete?tag=true", status_code=302)
 
 @app.get('/upload_complete', response_class=HTMLResponse)
-async def uploadComplete(request: Request,  success: str = "false"):
+async def uploadComplete(request: Request,  tag:str = Query("")):
     centre = request.state.centre
-    return templates.TemplateResponse("upload_complete.html", {"request": request, "centre": centre, 'success':success})
+    
+    debug_info = detag(tag)
+
+    print(debug_info)
+    return templates.TemplateResponse("upload_complete.html", {"request": request, "centre": centre, 'success':debug_info['success'], 'reason':debug_info['reason']})
 
 @app.get('/centres', response_class=JSONResponse)
 async def home(request: Request):
@@ -279,7 +296,13 @@ async def GetAllAccounts(request: Request):
         return RedirectResponse('/login')
     if request.state.centre.IsAdministrator:
         accounts = authenticationService.GetAllCentres()
-        return templates.TemplateResponse("Admin/accounts.html", {"request": request, "centre": request.state.centre, 'accounts': accounts, "RequestTime": datetime.datetime.now() })
+        requestTime = datetime.datetime.now()
+        for acc in accounts:
+            acc.formatted_last_login = format_last_logged_in(acc.LastLogin, requestTime)
+
+        accounts.sort(key=lambda acc: (acc.Prefix, acc.MemberNumber))
+
+        return templates.TemplateResponse("Admin/accounts.html", {"request": request, "centre": request.state.centre, 'accounts': accounts, "RequestTime": requestTime })
 
 @app.post("/admin/add-account", response_class=RedirectResponse)
 async def AddAccount(request: Request,  
