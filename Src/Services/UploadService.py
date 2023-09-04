@@ -55,7 +55,7 @@ class UploadService:
         newCentreUpload =  CentreUpload()
         newCentreUpload.CentreId = centreId
         newCentreUpload.RecordingNumber = recordingNumber
-        newCentreUpload.ESR = f'{str(centreId).zfill(2)}{str(recordingNumber).zfill(2)}'
+        newCentreUpload.ESR = f'{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(recordingNumber).zfill(2)}'
         newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.ESR)
 
         # newCentreUpload.ParticipantAge = ParticipantAge
