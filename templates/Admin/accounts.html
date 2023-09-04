@@ -4,61 +4,33 @@
 {% block page_content %}
 
 
-
 <div class="container">
     <div class="row">
         {% for acc in accounts %}
         <div class="col-md-4">
-            <div class="card mb-4">
+            <div class="card mb-4 plain-card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title">{{ acc.CentreName }}</h5>
-                        {% if acc.IsAdministrator %}
-                            <span class="text-success">
-                                <i class="fas fa-crown"></i> Admin
-                            </span>
-                        {% else %}
-                            <span class="text-secondary">
-                                <i class="far fa-user"></i> User
-                            </span>
-                        {% endif %}
-                        <a href="/admin/account/{{ acc.Id }}" class="btn btn-primary">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
+                    <h5 class="card-title">{{ acc.CentreName }}</h5>
+                    <div class="user-type">
+                        <span class="badge bg-{{ 'success' if acc.IsAdministrator else 'secondary' }}">
+                            {{ 'Admin' if acc.IsAdministrator else 'User' }}
+                        </span>
                     </div>
                     <h6 class="card-subtitle mb-2 text-muted">{{ acc.ResponsibleEmail }}</h6>
-
-                    <h7 class="card-subtitle mb-2 text-muted">{{ acc.Prefix }}{% if acc.MemberNumber < 10 %}0{% endif %}{{ acc.MemberNumber }}</h7>
-
+                    
+                    <div class="account-identifier">
+                        {{ acc.Prefix }}{% if acc.MemberNumber < 10 %}0{% endif %}{{ acc.MemberNumber }}
+                    </div>
+                    
                     <p class="card-text">{{ acc.Description }}</p>
+                </div>
+                <div class="card-footer plain-footer">
                     <p id="lastLoggedIn{{ acc.Id }}" class="text-muted">
-                        
-                    {% if acc.LastLogin %}
-                        {% set lastLogin = acc.LastLogin.replace(tzinfo=RequestTime.tzinfo) %}
-                        {% set now = RequestTime %}
-                        {% set timeDifference = now - lastLogin %}
-                        {% set days = timeDifference.days %}
-                        {% set years = days // 365 %}
-                        {% set days = days % 365 %}
-                        {% set hours = timeDifference.seconds // 3600 %}
-                        {% set minutes = (timeDifference.seconds % 3600) // 60 %}
-                        {% set timeAgo = "" %}
-                        
-                        {% if years > 0 %}{{ timeAgo }}{{ years }} year{{ "s" if years > 1 else "" }}{% endif %}
-                        {% if years > 0 and days > 0 %}, {% endif %}
-                        {% if days > 0 %}{{ timeAgo }}{{ days }} day{{ "s" if days > 1 else "" }}{% endif %}
-                        {% if days > 0 and hours > 0 %}, {% endif %}
-                        {% if hours > 0 %}{{ timeAgo }}{{ hours }} hour{{ "s" if hours > 1 else "" }}{% endif %}
-                        {% if hours > 0 and minutes > 0 %}, {% endif %}
-                        {% if minutes > 0 %}{{ timeAgo }}{{ minutes }} minute{{ "s" if minutes > 1 else "" }}{% endif %}
-                        {% if minutes > 0 %} ago{% endif %}
-                        
-                        ({{ lastLogin.strftime('%Y-%m-%d %H:%M') }} {% if timeAgo %}{{ timeAgo }} ago{% endif %})
-                    {% else %}
-                        Never logged in
-                    {% endif %}
-
+                        {{ acc.formatted_last_login }}
                     </p>
+                    <a href="/admin/account/{{ acc.Id }}" class="btn btn-primary">
+                        Edit
+                    </a>
                 </div>
             </div>
         </div>
@@ -66,6 +38,44 @@
     </div>
 </div>
 
+<style>
+    .plain-card {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        overflow: hidden;
+    }
+    
+    .plain-card:hover {
+        transform: translateY(-4px);
+    }
+    
+    .user-type {
+        font-size: 14px;
+    }
+    
+    .badge {
+        padding: 6px 10px;
+    }
+    
+    .account-identifier {
+        font-size: 18px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        padding: 4px 8px;
+        display: inline-block;
+        margin-bottom: 10px;
+        color: #3498db;
+    }
+    
+    .plain-footer {
+        background-color: #f5f5f5;
+        border-top: 1px solid #ccc;
+        padding: 10px;
+        text-align: center;
+    }
+</style>
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -78,7 +88,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="ResponsibleEmail">Prefix</label>
+                    <label for="Prefix">Prefix</label>
                     <input type="text" class="form-control" id="Prefix" name="Prefix" required>
                 </div>
                 
@@ -98,23 +108,35 @@
                 </div>
                 <div class="form-group">
                     <label for="Password1">Password</label>
-                    <input type="password" class="form-control" id="Password1" name="Password1" required>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="Password1" name="Password1" required>
+                        <button class="btn btn-outline-secondary" type="button" id="show-password-toggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="Password2">Confirm Password</label>
-                    <input type="password" class="form-control" id="Password2" name="Password2" required>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="Password2" name="Password2" required>
+                        <button class="btn btn-outline-secondary" type="button" id="show-confirm-password-toggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-primary">Add Account</button>
+                    <button type="submit" class="btn btn-primary" id="submit-button" disabled>Add Account</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 <script>
     const password1 = document.getElementById('Password1');
     const password2 = document.getElementById('Password2');
+    const showPasswordToggle = document.getElementById('show-password-toggle');
+    const showConfirmPasswordToggle = document.getElementById('show-confirm-password-toggle');
+    const submitButton = document.getElementById('submit-button');
 
     function validatePassword() {
         if (password1.value !== password2.value) {
@@ -126,6 +148,26 @@
 
     password1.addEventListener('input', validatePassword);
     password2.addEventListener('input', validatePassword);
+
+    showPasswordToggle.addEventListener('click', function() {
+        const type = password1.type === 'password' ? 'text' : 'password';
+        password1.type = type;
+        showPasswordToggle.innerHTML = `<i class="fas fa-eye${type === 'text' ? '-slash' : ''}"></i>`;
+    });
+
+    showConfirmPasswordToggle.addEventListener('click', function() {
+        const type = password2.type === 'password' ? 'text' : 'password';
+        password2.type = type;
+        showConfirmPasswordToggle.innerHTML = `<i class="fas fa-eye${type === 'text' ? '-slash' : ''}"></i>`;
+    });
+
+    // Enable the submit button only if all fields are filled out
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', function() {
+            const allInputsFilled = Array.from(document.querySelectorAll('input')).every(input => input.value.trim() !== '');
+            submitButton.disabled = !allInputsFilled;
+        });
+    });
 </script>
 
 {% endblock %}
