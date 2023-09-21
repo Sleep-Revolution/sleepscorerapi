@@ -7,9 +7,11 @@ from fastapi.staticfiles import StaticFiles
 import time
 import datetime
 from Src.Services.AuthenticationService import AuthenticationService
+from Src.Services.AnalyticsService import AnalyticsService
+
 from Src.Services.UploadService import UploadService
 from Src.Infrastructure.JWT import JWTBearer, ParseAccessToken
-from Src.Models.Models import CentreCreate, AuthCredentials
+from Src.Models.Models import CentreCreate, AuthCredentials, LogEntity
 import ipaddress
 from Src.Infrastructure.Utils import format_last_logged_in
 from Src.Infrastructure.ErrorMiddleware import ErrorMiddleware
@@ -17,6 +19,7 @@ import base64
 
 authenticationService = AuthenticationService()
 uploadService = UploadService()
+analyticsService = AnalyticsService()
 
 app = FastAPI(max_request_size=4*1024*1024*1024) # 4 GB max file size
 templates = Jinja2Templates(directory="templates")
@@ -258,6 +261,12 @@ async def GetAllDatasets(request: Request, name:str):
         recordings = uploadService.listDataset(name)
         return templates.TemplateResponse("Admin/datasetview.html", {"request": request, "centre": request.state.centre, "datasetName": name, "recordings": recordings })
 
+@app.post("/meta/log")
+async def PukeLog(request: Request, log: LogEntity):
+    print("Got a logggg")
+    analyticsService.AddLog(log)
+    
+
 @app.post("/admin/dataset/{name}", response_class=HTMLResponse)
 async def CreateJobsForDataset(request:Request, name:str):
     if not request.state.centre:
@@ -265,7 +274,7 @@ async def CreateJobsForDataset(request:Request, name:str):
         return RedirectResponse('/login')
     if request.state.centre.IsAdministrator:
         uploadService.CreateJobsForDataset(name)
-        return templates.TemplateResponse("Admin/foooo")
+        return templates.TemplateResponse(f"admin/dataset/{name}", {"request": request})
     else:
         return RedirectResponse('/', status_code=302)
 

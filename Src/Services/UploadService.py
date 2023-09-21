@@ -1,9 +1,11 @@
 import io
 import re
+from urllib.request import HTTPBasicAuthHandler
 from zipfile import ZipFile
 from Src.Models.Models import Centre, CentreUpload, Night
 from Src.Repositories.AuthenticationRepository import AuthenticationRepository 
 from Src.Repositories.UploadsRepository import UploadRepository
+from Src.Repositories.AnalyticsRepository import AnalyticsRepository
 from hashids import Hashids
 import pika
 import os 
@@ -13,8 +15,10 @@ from pyzabbix import ZabbixMetric, ZabbixSender
 import requests
 from pyzabbix import ZabbixMetric, ZabbixSender
 
-UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
+from requests.auth import HTTPBasicAuth
 
+UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
+DATASET_DIR = os.environ['DATASET_DIR']
 
 class UploadService:
     def __init__(self, authrepo=None):
@@ -24,6 +28,7 @@ class UploadService:
             self.AuthenticationRepository = AuthenticationRepository()
 
         self.UploadRepository = UploadRepository()
+        self.AnalyticsRepository = AnalyticsRepository() 
 
         self.creds = pika.PlainCredentials('server', 'server')
         self.connection_params = pika.ConnectionParameters(os.environ['RABBITMQ_SERVER'], 5672, '/', self.creds)
@@ -132,7 +137,7 @@ class UploadService:
         #send_to_zabbix([Metric('sleepwell.sleep.ru.is', 'ESADA.upload',  db_c.CentreName)], zabbix_server, 10051)
         #  This is going in another place!
         
-    
+
     def addNightToUpload(self, uploadId: int, nightLocation:str, quality:str, metadata:str):
         
         db_u = self.UploadRepository.GetUploadById(uploadId)
@@ -163,6 +168,7 @@ class UploadService:
         body = {
             'name': os.path.basename(nightLocation),
             'path': db_c.FolderLocation,
+            'dataset': False,
             'centreId': db_c.Id
         }
         connection = pika.BlockingConnection(self.connection_params)
@@ -225,16 +231,19 @@ class UploadService:
         #             output_file.write(file_content)
 
     def listDatasets(self):
-        fpath = os.path.join(UPLOAD_DIR,"DATASETS")
+        fpath = os.path.join(DATASET_DIR)
         return list(os.listdir(fpath))
 
     def listDataset(self, name):
-        fpath = os.path.join(UPLOAD_DIR,"DATASETS", name)
+        fpath = os.path.join(DATASET_DIR, name)
         r = []
         for d in os.listdir(fpath):
             dd = os.path.join(fpath, d)
+
+            j = self.CheckJobStatusForRecordingInDataset(name, d)
+
             x = self.verifyIsRecording(dd)
-            r.append({"recording": d, "valid": x})
+            r.append({"recording": d, "valid": x, "jobstatus": j})
         return r
 
 
@@ -254,6 +263,132 @@ class UploadService:
             valid = False
         return valid, reason
 
+
+    # def CheckJobStatusForRecordingInDataset(self, datasetName, recordingName):
+    #     # Build the URL for fetching messages from the queue
+    #     get_messages_url = f"http://130.208.209.2:15672/api/queues/%2f/dev_task_queue/get"
+
+    #     # Prepare the payload to fetch a certain number of messages
+    #     # In this example, we'll fetch the first 100 messages. Adjust as needed.
+    #     data = {
+    #         "count": -1,
+    #         "ackmode": "ack_requeue_true",
+    #         "encoding": "auto"
+    #     }
+
+    #     response = requests.post(get_messages_url, headers={"content-type": "application/json"}, data=json.dumps(data), auth=HTTPBasicAuth("server", "server"))
+    #     found = False
+    #     # Check for a successful response
+    #     if response.status_code == 200:
+    #         messages = response.json()
+    #         for msg in messages:
+    #             payload = msg.get("payload")
+    #             if payload:
+    #                 body = json.loads(payload)
+    #                 # Check if the job matches the dataset and recording name
+    #                 if body.get("name") == recordingName and body.get("path") == f"DATASETS/{datasetName}":
+    #                     found = True
+    #                     break
+    #     else:
+    #         print(f"Failed to fetch messages from queue. Status Code: {response.status_code}, Response: {response.text}")
+    #         return False
+
+    #     ll = self.GetLastJobStatus(recordingName, datasetName)
+
+    #     if ll is not None:
+    #         return ll
+
+    #     if not found:  # If the job doesn't exist in the main queue, then check its status in the progress_topic
+    #         status_message = self._get_job_status_from_progress_topic(recordingName)
+    #         if status_message:
+    #             return f"Job for {recordingName} in {datasetName} is currently: {status_message}"
+    #         else:
+    #             return f"No job or status found for {recordingName} in {datasetName}"
+
+
+    #     return f"Job for {recordingName} in {datasetName} is in the queue."
+    def CheckJobStatusForRecordingInDataset(self, datasetName, recordingName):
+        """
+        Checks the job status for a given recording in a dataset. 
+
+        Parameters:
+        - datasetName: Name of the dataset
+        - recordingName: Name of the recording
+
+        Returns:
+        - status_obj: A dictionary containing the status message, an error indicator, and any additional information.
+        """
+
+        def create_status_object(message, is_error=False, additional_info=None):
+            """Helper function to create and return a status object."""
+            return {
+                "message": message,
+                "is_error": is_error,
+                "additional_info": additional_info
+            }
+
+        # Build the URL for fetching messages from the queue
+        get_messages_url = f"http://130.208.209.2:15672/api/queues/%2f/dev_task_queue/get"
+
+        # Prepare the payload to fetch a certain number of messages
+        data = {
+            "count": -1,
+            "ackmode": "ack_requeue_true",
+            "encoding": "auto"
+        }
+
+        try:
+            response = requests.post(get_messages_url, headers={"content-type": "application/json"}, 
+                                    data=json.dumps(data), auth=HTTPBasicAuth("server", "server"))
+
+            # Check for a successful response
+            if response.status_code != 200:
+                return create_status_object(f"Failed to fetch messages from queue. Status Code: {response.status_code}, Response: {response.text}", is_error=True)
+
+            messages = response.json()
+            for msg in messages:
+                payload = msg.get("payload")
+                if payload:
+                    body = json.loads(payload)
+                    # Check if the job matches the dataset and recording name
+                    if body.get("name") == recordingName and body.get("path") == f"DATASETS/{datasetName}":
+                        return create_status_object(f"Job for {recordingName} in {datasetName} is in the queue.")
+
+            # If the job doesn't exist in the main queue, check its status in the progress_topic
+            last_log_status = self.GetLastJobStatus(recordingName, datasetName)
+            if last_log_status:
+                return last_log_status
+
+            return create_status_object(f"No job or status found for {recordingName} in {datasetName}", is_error=True)
+
+        except Exception as e:
+            return create_status_object(f"An error occurred: {str(e)}", is_error=True)
+
+
+    def GetLastJobStatus(self, recordingName, datasetName):
+        status_obj = {
+            "message": "wat",
+            "is_error": False,
+            "additional_info": None
+        }
+        log = self.AnalyticsRepository.GetLastLogForFile(recordingName, datasetName)
+        if log is None:
+            status_obj["message"] = None
+            return status_obj   
+        if log.Progress == 2:
+            status_obj["message"] = "Job finished successfully"
+        elif log.Progress == -1:
+            status_obj["message"] = f"Job failed in task '{log.TaskTitle}' with the message '{log.Message}'"
+            status_obj["is_error"] = True
+        elif log.Progress == 0:
+            status_obj["message"] = f"Job started task '{log.TaskTitle}'"
+        elif log.Progress == 1:
+            status_obj["message"] = f"Job finished task '{log.TaskTitle}'"
+            
+        return status_obj
+
+    
+
     def CreateJobsForDataset(self, datasetname):
 
         connection = pika.BlockingConnection(self.connection_params)
@@ -261,12 +396,13 @@ class UploadService:
         # # Declare the queue
         channel.queue_declare(queue=os.environ['TASK_QUEUE_NAME'], durable=True)
 
-        fpath = os.path.join(UPLOAD_DIR,"DATASETS", datasetname)
+        fpath = os.path.join(DATASET_DIR, datasetname)
 
         for d in os.listdir(fpath):
             body = {
                 'name': d,
-                'path': f"DATASETS/{datasetname}",
+                'path': f"{datasetname}",
+                'dataset': True,
                 'centreId': 9999
             }
         # # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
@@ -316,10 +452,6 @@ class UploadService:
             pwd = os.path.join(self.individualNightWaitingRoom, centre)
             for project in os.listdir(pwd):
                 self.RescanLocation(os.path.join(pwd, project))
-
-
-        
-
 
 
     def get_active_connections(self, queue_name):
