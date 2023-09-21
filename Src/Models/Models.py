@@ -32,6 +32,9 @@ class CentreUpload(Base):
     Nights = relationship("Night", back_populates="Upload")
     ESR = ""#f"{CentreId}{RecordingNumber}"
 
+
+
+
 class Night(Base):
     __tablename__ = "Nights"
     Id = Column(Integer, primary_key=True, index=True)
@@ -40,6 +43,8 @@ class Night(Base):
     Location = Column(String)
     IsFaulty = Column(Boolean)
     Upload = relationship("CentreUpload", back_populates="")
+
+
 
 # class Dataset(Base):
 #     __tablename__ = "Datasets"
@@ -56,3 +61,44 @@ class CentreCreate(BaseModel):
 class AuthCredentials(BaseModel):
     Email: str
     Password: str
+# {
+# "CentreId": 9999, 
+# "Filename": "20200305T224702_-_aae33", 
+# "StepNumber": 1, 
+# "TaskTitle": "Convert To EDF", 
+# "Progrees": 0, 
+# "Message": ""
+# }
+
+class LogEntity(BaseModel):
+    CentreId: int
+    FileName: str
+    StepNumber: int
+    TaskTitle: str
+    Progress: int
+    Message: str
+    DatasetName: str
+
+    def ToEntry(self):
+        d = LogDataEntry()
+        d.CentreId=self.CentreId
+        d.Message=self.Message
+        d.Progress=self.Progress
+        d.TaskTitle=self.TaskTitle
+        d.StepNumber=self.StepNumber
+        d.FileName=self.FileName
+        d.DatasetName=self.DatasetName
+        return d
+
+class LogDataEntry(Base):
+    __tablename__ = 'Logs'
+    
+    Id = Column(Integer, primary_key=True)
+    FileName = Column(String)
+    Timestamp = Column(DateTime, default=func.now())
+    StepNumber = Column(Integer)
+    TaskTitle = Column(String)
+    Progress = Column(Integer)
+    Message = Column(String)
+    DatasetName = Column(String)
+    CentreId = Column(Integer)

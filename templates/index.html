@@ -111,11 +111,14 @@
       });
 
       xhr.onload = function () {
-        if (xhr.status > 299) {
-          window.location = "/upload_complete?success=false";
-        } else {
-          window.location = "upload_complete?success=true";
-        }
+        window.location = xhr.responseURL
+        // console.log(xhr);
+        // if (xhr.status === 302) {
+        //     const newLocation = xhr.getResponseHeader("Location");
+        //     if (newLocation) {
+        //         window.location.href = newLocation;
+        //     }
+        // }
       };
 
       xhr.send(formData);
