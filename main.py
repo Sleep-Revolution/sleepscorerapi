@@ -7,9 +7,11 @@ from fastapi.staticfiles import StaticFiles
 import time
 import datetime
 from Src.Services.AuthenticationService import AuthenticationService
+from Src.Services.AnalyticsService import AnalyticsService
+
 from Src.Services.UploadService import UploadService
 from Src.Infrastructure.JWT import JWTBearer, ParseAccessToken
-from Src.Models.Models import CentreCreate, AuthCredentials
+from Src.Models.Models import CentreCreate, AuthCredentials, LogEntity
 import ipaddress
 from Src.Infrastructure.Utils import format_last_logged_in
 from Src.Infrastructure.ErrorMiddleware import ErrorMiddleware
@@ -17,6 +19,7 @@ import base64
 
 authenticationService = AuthenticationService()
 uploadService = UploadService()
+analyticsService = AnalyticsService()
 
 app = FastAPI(max_request_size=4*1024*1024*1024) # 4 GB max file size
 templates = Jinja2Templates(directory="templates")
@@ -99,7 +102,7 @@ async def home(request: Request):
 def tagize(success, reason):
     debugInfo = {"success":success, "reason": reason}
     s = json.dumps(debugInfo)
-    return base64.b64encode(s.encode(ascii)).decode("ascii")
+    return base64.b64encode(s.encode('ascii')).decode("ascii")
 def detag(tag):
     base64_bytes = tag.encode("ascii")
     sample_string_bytes = base64.b64decode(base64_bytes)
@@ -112,7 +115,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
     ):
     # centre = authenticationService.GetCentreById(request)
     centre = request.state.centre
-    if not centre:
+    if not centre: 
         print("Problem finding centre in request")
         raise ValueError("Centre required.")
 
@@ -127,20 +130,21 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
         print("Invalid file")
         dbi = tagize(False, "Invalid file type.")
         return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
+        
     else:
         print(f"->>>> Creating upload with {file.filename}")
         # The business logic should be implemented in the service class.
         await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
         dbi = tagize(True, "")
-        return RedirectResponse("/upload_complete?tag=true", status_code=302)
+        return RedirectResponse("/upload_complete?tag=dbi", status_code=302)
 
 @app.get('/upload_complete', response_class=HTMLResponse)
 async def uploadComplete(request: Request,  tag:str = Query("")):
+    if tag == "":
+        return
     centre = request.state.centre
-    
     debug_info = detag(tag)
-
     print(debug_info)
     return templates.TemplateResponse("upload_complete.html", {"request": request, "centre": centre, 'success':debug_info['success'], 'reason':debug_info['reason']})
 
@@ -257,6 +261,12 @@ async def GetAllDatasets(request: Request, name:str):
         recordings = uploadService.listDataset(name)
         return templates.TemplateResponse("Admin/datasetview.html", {"request": request, "centre": request.state.centre, "datasetName": name, "recordings": recordings })
 
+@app.post("/meta/log")
+async def PukeLog(request: Request, log: LogEntity):
+    print("Got a logggg")
+    analyticsService.AddLog(log)
+    
+
 @app.post("/admin/dataset/{name}", response_class=HTMLResponse)
 async def CreateJobsForDataset(request:Request, name:str):
     if not request.state.centre:
@@ -264,7 +274,7 @@ async def CreateJobsForDataset(request:Request, name:str):
         return RedirectResponse('/login')
     if request.state.centre.IsAdministrator:
         uploadService.CreateJobsForDataset(name)
-        return templates.TemplateResponse("Admin/foooo")
+        return templates.TemplateResponse(f"admin/dataset/{name}", {"request": request})
     else:
         return RedirectResponse('/', status_code=302)
 
