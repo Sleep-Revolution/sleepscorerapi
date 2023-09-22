@@ -7,7 +7,37 @@
   transform: scale(1.01);
   box-shadow: 0 10px 20px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
 }
+
+.tooltip.fade .tooltip-inner {
+    transition: opacity 0.3s; /* Adjust duration as needed */
+}
+
+.tooltip-inner {
+    max-width: 400px; /* Adjust as per need */
+    padding: 10px 15px;
+    color: #fff;
+    background-color: #333; /* Dark background */
+    border-radius: 5px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.tooltip.bs-tooltip-auto[x-placement^=top], .tooltip.bs-tooltip-top {
+    margin-bottom: 10px; /* little spacing between tooltip and element */
+}
+
+.tooltip.bs-tooltip-auto[x-placement^=bottom], .tooltip.bs-tooltip-bottom {
+    margin-top: 10px; /* little spacing between tooltip and element */
+}
+
+.tooltip-arrow {
+    width: 10px;
+    height: 5px;
+}
+
 </style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 {% endblock %}
 
 {% block page_content %}
@@ -36,11 +66,27 @@
               <td class="bg-danger" data-toggle="tooltip" data-placement="left" title="{{night.valid[1]}}">
                 ✕
               </td>
+
+
               {% endif %}
               
-              <td>
+              {% set latest_step = None %}
+{% if night.jobstatus.job_history %}
+    {% set sorted_steps = night.jobstatus.job_history.keys()|list|sort %}
+    {% set latest_step = sorted_steps[-1] %}
+{% endif %}
+{% set latest_job = night.jobstatus.job_history[latest_step] if latest_step else None %}
+              <!-- {% set latest_job = night.jobstatus.job_history[latest_step] if latest_step else None %} -->
+              {% set status_color = 'bg-loading' if latest_job and latest_job['Progress'] == 0 else 'bg-success' if latest_job and latest_job['Progress'] == 2 else 'bg-failed' %}
+              {% set status_text = 'Loading...' if latest_job and latest_job['Progress'] == 0 else '✓' if latest_job and latest_job['Progress'] == 2 else '✕' %}
+
+              <td class="{{status_color}}" data-toggle="tooltip" data-placement="left" 
+    title="{% for step, details in night.jobstatus.job_history.items() %}{{details['TaskTitle']}}: {{details['Message']}}<br>{% endfor %}">
+    {{status_text}}
+</td>        
+              <!-- <td>
                 {{night.jobstatus}}
-              </td>
+              </td> -->
 
             </tr>
           {% endfor %}
@@ -75,8 +121,14 @@
       console.error("Upload error:", error);
     });
   }
-</script>
 
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip({
+        html: true
+    });
+  });
+
+</script>
 
 
 {% endblock %}
