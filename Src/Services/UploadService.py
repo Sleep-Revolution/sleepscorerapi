@@ -234,17 +234,6 @@ class UploadService:
         fpath = os.path.join(DATASET_DIR)
         return list(os.listdir(fpath))
 
-    def listDataset(self, name):
-        fpath = os.path.join(DATASET_DIR, name)
-        r = []
-        for d in os.listdir(fpath):
-            dd = os.path.join(fpath, d)
-
-            j = self.CheckJobStatusForRecordingInDataset(name, d)
-
-            x = self.verifyIsRecording(dd)
-            r.append({"recording": d, "valid": x, "jobstatus": j})
-        return r
 
 
 
@@ -263,107 +252,88 @@ class UploadService:
             valid = False
         return valid, reason
 
+    def group_job_history(self, job_history):
+        grouped_history = {}
 
-    # def CheckJobStatusForRecordingInDataset(self, datasetName, recordingName):
-    #     # Build the URL for fetching messages from the queue
-    #     get_messages_url = f"http://130.208.209.2:15672/api/queues/%2f/dev_task_queue/get"
+        for entry in job_history:
 
-    #     # Prepare the payload to fetch a certain number of messages
-    #     # In this example, we'll fetch the first 100 messages. Adjust as needed.
-    #     data = {
-    #         "count": -1,
-    #         "ackmode": "ack_requeue_true",
-    #         "encoding": "auto"
-    #     }
+            print(entry)
+            step = entry['StepNumber']
+            progress = entry['Progress']
+            task_title = entry['TaskTitle']
+            message = entry['Message']
 
-    #     response = requests.post(get_messages_url, headers={"content-type": "application/json"}, data=json.dumps(data), auth=HTTPBasicAuth("server", "server"))
-    #     found = False
-    #     # Check for a successful response
-    #     if response.status_code == 200:
-    #         messages = response.json()
-    #         for msg in messages:
-    #             payload = msg.get("payload")
-    #             if payload:
-    #                 body = json.loads(payload)
-    #                 # Check if the job matches the dataset and recording name
-    #                 if body.get("name") == recordingName and body.get("path") == f"DATASETS/{datasetName}":
-    #                     found = True
-    #                     break
-    #     else:
-    #         print(f"Failed to fetch messages from queue. Status Code: {response.status_code}, Response: {response.text}")
-    #         return False
+            # If step not in grouped history or the current progress is termination (1, -1, 2)
+            if step not in grouped_history or progress in [1, -1, 2]:
+                grouped_history[step] = {
+                    'TaskTitle': task_title,
+                    'Message': message if progress == -1 else task_title  # Error message if failed
+                }
+        
+        return grouped_history
+    
+    def listDataset(self, name):
+        fpath = os.path.join(DATASET_DIR, name)
+        r = []
+        jobs = self.GetJobsInQueue()
+        for d in os.listdir(fpath):
+            dd = os.path.join(fpath, d)
+            j = self.CheckJobStatusForRecordingInDataset(name, d, jobs)
+            j['job_history'] = self.group_job_history(j['job_history'])
+            x = self.verifyIsRecording(dd)
+            r.append({"recording": d, "valid": x, "jobstatus": j})
+        return r
 
-    #     ll = self.GetLastJobStatus(recordingName, datasetName)
-
-    #     if ll is not None:
-    #         return ll
-
-    #     if not found:  # If the job doesn't exist in the main queue, then check its status in the progress_topic
-    #         status_message = self._get_job_status_from_progress_topic(recordingName)
-    #         if status_message:
-    #             return f"Job for {recordingName} in {datasetName} is currently: {status_message}"
-    #         else:
-    #             return f"No job or status found for {recordingName} in {datasetName}"
-
-
-    #     return f"Job for {recordingName} in {datasetName} is in the queue."
-    def CheckJobStatusForRecordingInDataset(self, datasetName, recordingName):
-        """
-        Checks the job status for a given recording in a dataset. 
-
-        Parameters:
-        - datasetName: Name of the dataset
-        - recordingName: Name of the recording
-
-        Returns:
-        - status_obj: A dictionary containing the status message, an error indicator, and any additional information.
-        """
-
-        def create_status_object(message, is_error=False, additional_info=None):
-            """Helper function to create and return a status object."""
-            return {
-                "message": message,
-                "is_error": is_error,
-                "additional_info": additional_info
-            }
-
-        # Build the URL for fetching messages from the queue
+    def GetJobsInQueue(self):
         get_messages_url = f"http://130.208.209.2:15672/api/queues/%2f/dev_task_queue/get"
-
-        # Prepare the payload to fetch a certain number of messages
         data = {
             "count": -1,
             "ackmode": "ack_requeue_true",
             "encoding": "auto"
         }
+        response = requests.post(get_messages_url, headers={"content-type": "application/json"},
+                                data=json.dumps(data), auth=HTTPBasicAuth("server", "server"))
 
-        try:
-            response = requests.post(get_messages_url, headers={"content-type": "application/json"}, 
-                                    data=json.dumps(data), auth=HTTPBasicAuth("server", "server"))
+        if response.status_code != 200:
+            return []
 
-            # Check for a successful response
-            if response.status_code != 200:
-                return create_status_object(f"Failed to fetch messages from queue. Status Code: {response.status_code}, Response: {response.text}", is_error=True)
+        messages = response.json()
+        jobs = []
+        for msg in messages:
+            payload = msg.get("payload")
+            if payload:
+                body = json.loads(payload)
+                jobs.append(body)
+        return jobs
 
-            messages = response.json()
-            for msg in messages:
-                payload = msg.get("payload")
-                if payload:
-                    body = json.loads(payload)
-                    # Check if the job matches the dataset and recording name
-                    if body.get("name") == recordingName and body.get("path") == f"DATASETS/{datasetName}":
-                        return create_status_object(f"Job for {recordingName} in {datasetName} is in the queue.")
+    
+    def CheckJobStatusForRecordingInDataset(self, datasetName, recordingName, jobs):
+        def create_status_object(is_error=False, job_exists=False, job_history=[]):
+            return {
+                "is_error": is_error,
+                "job_exists": job_exists,
+                "job_history": job_history
+            }
 
-            # If the job doesn't exist in the main queue, check its status in the progress_topic
-            last_log_status = self.GetLastJobStatus(recordingName, datasetName)
-            if last_log_status:
-                return last_log_status
+        is_in_queue = any(job.get("name") == recordingName and job.get("path") == f"DATASETS/{datasetName}" for job in jobs)
+        
+        job_history = self.GetHistory(recordingName, datasetName)
+        
+        cleaned_job_history = []
+        for entry in job_history:
+            clean_dict = {k: v for k, v in entry.__dict__.items() if not k.startswith('_')}
+            cleaned_job_history.append(clean_dict)
 
-            return create_status_object(f"No job or status found for {recordingName} in {datasetName}", is_error=True)
+        if is_in_queue:
+            return create_status_object(job_exists=True, job_history=cleaned_job_history)
+        
+        if not cleaned_job_history:
+            return create_status_object(is_error=True)
+        
+        return create_status_object(job_exists=False, job_history=cleaned_job_history)
 
-        except Exception as e:
-            return create_status_object(f"An error occurred: {str(e)}", is_error=True)
-
+    def GetHistory(self, recordingName, datasetName):
+        return self.AnalyticsRepository.GetAllLogsForFile(recordingName, datasetName)
 
     def GetLastJobStatus(self, recordingName, datasetName):
         status_obj = {
@@ -384,7 +354,6 @@ class UploadService:
             status_obj["message"] = f"Job started task '{log.TaskTitle}'"
         elif log.Progress == 1:
             status_obj["message"] = f"Job finished task '{log.TaskTitle}'"
-            
         return status_obj
 
     
