@@ -24,6 +24,9 @@ analyticsService = AnalyticsService()
 app = FastAPI(max_request_size=4*1024*1024*1024) # 4 GB max file size
 templates = Jinja2Templates(directory="templates")
 
+
+
+
 jwtBearer = JWTBearer()
 
 @app.exception_handler(HTTPException)
@@ -137,7 +140,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
         await uploadService.CreateUpload(centre.Id, file, recordingNumber)
 
         dbi = tagize(True, "")
-        return RedirectResponse("/upload_complete?tag=dbi", status_code=302)
+        return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
 
 @app.get('/upload_complete', response_class=HTMLResponse)
 async def uploadComplete(request: Request,  tag:str = Query("")):
@@ -241,7 +244,6 @@ async def create_upload_dataset(request: Request, file: UploadFile = File(...), 
         await uploadService.createDataset(file, datasetName)
 
         return RedirectResponse("/admin/datasets", status_code=302)
-
 
 @app.get("/admin/datasets", response_class=HTMLResponse)
 async def GetAllDatasets(request: Request):

@@ -38,6 +38,11 @@ class AnalyticsRepository:
             return session.query(LogDataEntry).filter(LogDataEntry.FileName == filename, LogDataEntry.DatasetName == datasetName).order_by(LogDataEntry.Id.desc()).first()
                             
 
+    def GetAllLogsForUploadedRecording(self, ESR):
+        with self.Session() as session:
+            return session.query(LogDataEntry).filter(LogDataEntry.FileName == ESR).order_by(LogDataEntry.Id.desc()).all()
+        
+
     def AddLog(self, log: LogDataEntry):
         print(log.__dict__)
 
