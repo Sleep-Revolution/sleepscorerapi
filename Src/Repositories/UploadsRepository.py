@@ -62,5 +62,5 @@ class UploadRepository:
             cu = session.query(CentreUpload).filter(CentreUpload.Id == uploadId).one()
             cu.Nights
             cu.Centre
-            cu.ESR = f'{str(cu.CentreId).zfill(2)}{str(cu.RecordingNumber).zfill(2)}'
+            cu.ESR = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}{str(cu.RecordingNumber).zfill(2)}'
             return cu
