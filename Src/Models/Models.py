@@ -61,14 +61,6 @@ class CentreCreate(BaseModel):
 class AuthCredentials(BaseModel):
     Email: str
     Password: str
-# {
-# "CentreId": 9999, 
-# "Filename": "20200305T224702_-_aae33", 
-# "StepNumber": 1, 
-# "TaskTitle": "Convert To EDF", 
-# "Progrees": 0, 
-# "Message": ""
-# }
 
 class LogEntity(BaseModel):
     CentreId: int
@@ -90,6 +82,7 @@ class LogEntity(BaseModel):
         d.DatasetName=self.DatasetName
         return d
 
+#
 class LogDataEntry(Base):
     __tablename__ = 'Logs'
     

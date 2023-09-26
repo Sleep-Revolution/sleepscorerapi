@@ -15,7 +15,9 @@ from pyzabbix import ZabbixMetric, ZabbixSender
 import requests
 from pyzabbix import ZabbixMetric, ZabbixSender
 
-from requests.auth import HTTPBasicAuth
+from Src.Services.AnalyticsService import AnalyticsService
+
+
 
 UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
 DATASET_DIR = os.environ['DATASET_DIR']
@@ -28,8 +30,8 @@ class UploadService:
             self.AuthenticationRepository = AuthenticationRepository()
 
         self.UploadRepository = UploadRepository()
-        self.AnalyticsRepository = AnalyticsRepository() 
-
+        # self.AnalyticsRepository = AnalyticsRepository() 
+        self.AnalyticsService = AnalyticsService()
         self.creds = pika.PlainCredentials('server', 'server')
         self.connection_params = pika.ConnectionParameters(os.environ['RABBITMQ_SERVER'], 5672, '/', self.creds)
         self.individualNightWaitingRoom = os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM']
@@ -252,109 +254,21 @@ class UploadService:
             valid = False
         return valid, reason
 
-    def group_job_history(self, job_history):
-        grouped_history = {}
-
-        for entry in job_history:
-
-            print(entry)
-            step = entry['StepNumber']
-            progress = entry['Progress']
-            task_title = entry['TaskTitle']
-            message = entry['Message']
-
-            # If step not in grouped history or the current progress is termination (1, -1, 2)
-            if step not in grouped_history or progress in [1, -1, 2]:
-                grouped_history[step] = {
-                    'TaskTitle': task_title,
-                    'Message': message if progress == -1 else task_title  # Error message if failed
-                }
-        
-        return grouped_history
+    
     
     def listDataset(self, name):
         fpath = os.path.join(DATASET_DIR, name)
         r = []
-        jobs = self.GetJobsInQueue()
+        jobs = self.AnalyticsService.GetJobsInQueue()
         for d in os.listdir(fpath):
             dd = os.path.join(fpath, d)
-            j = self.CheckJobStatusForRecordingInDataset(name, d, jobs)
-            j['job_history'] = self.group_job_history(j['job_history'])
+            j = self.AnalyticsService.CheckJobStatusForRecordingInDataset(name, d, jobs)
+            j['job_history'] = self.AnalyticsService.group_job_history(j['job_history'])
             x = self.verifyIsRecording(dd)
-            r.append({"recording": d, "valid": x, "jobstatus": j})
+            r.append({"recording": d, "valid": x, "meta": j})
         return r
 
-    def GetJobsInQueue(self):
-        get_messages_url = f"http://130.208.209.2:15672/api/queues/%2f/dev_task_queue/get"
-        data = {
-            "count": -1,
-            "ackmode": "ack_requeue_true",
-            "encoding": "auto"
-        }
-        response = requests.post(get_messages_url, headers={"content-type": "application/json"},
-                                data=json.dumps(data), auth=HTTPBasicAuth("server", "server"))
-
-        if response.status_code != 200:
-            return []
-
-        messages = response.json()
-        jobs = []
-        for msg in messages:
-            payload = msg.get("payload")
-            if payload:
-                body = json.loads(payload)
-                jobs.append(body)
-        return jobs
-
     
-    def CheckJobStatusForRecordingInDataset(self, datasetName, recordingName, jobs):
-        def create_status_object(is_error=False, job_exists=False, job_history=[]):
-            return {
-                "is_error": is_error,
-                "job_exists": job_exists,
-                "job_history": job_history
-            }
-
-        is_in_queue = any(job.get("name") == recordingName and job.get("path") == f"DATASETS/{datasetName}" for job in jobs)
-        
-        job_history = self.GetHistory(recordingName, datasetName)
-        
-        cleaned_job_history = []
-        for entry in job_history:
-            clean_dict = {k: v for k, v in entry.__dict__.items() if not k.startswith('_')}
-            cleaned_job_history.append(clean_dict)
-
-        if is_in_queue:
-            return create_status_object(job_exists=True, job_history=cleaned_job_history)
-        
-        if not cleaned_job_history:
-            return create_status_object(is_error=True)
-        
-        return create_status_object(job_exists=False, job_history=cleaned_job_history)
-
-    def GetHistory(self, recordingName, datasetName):
-        return self.AnalyticsRepository.GetAllLogsForFile(recordingName, datasetName)
-
-    def GetLastJobStatus(self, recordingName, datasetName):
-        status_obj = {
-            "message": "wat",
-            "is_error": False,
-            "additional_info": None
-        }
-        log = self.AnalyticsRepository.GetLastLogForFile(recordingName, datasetName)
-        if log is None:
-            status_obj["message"] = None
-            return status_obj   
-        if log.Progress == 2:
-            status_obj["message"] = "Job finished successfully"
-        elif log.Progress == -1:
-            status_obj["message"] = f"Job failed in task '{log.TaskTitle}' with the message '{log.Message}'"
-            status_obj["is_error"] = True
-        elif log.Progress == 0:
-            status_obj["message"] = f"Job started task '{log.TaskTitle}'"
-        elif log.Progress == 1:
-            status_obj["message"] = f"Job finished task '{log.TaskTitle}'"
-        return status_obj
 
     
 
@@ -412,9 +326,9 @@ class UploadService:
         if not os.path.exists(location):
             print("No location exists.")
             return []
-        esrMatch = list(filter(lambda x: os.path.basename(x)[:4] == upload.ESR, os.listdir(location)))
-        
-        return [{'ESR': x, 'isValid': self.verifyIsRecording(os.path.join(location, x) )} for x in esrMatch] 
+        esrMatch = list(filter(lambda x: os.path.basename(x)[:len(upload.ESR)] == upload.ESR, os.listdir(location)))
+        jobs = self.AnalyticsService.GetJobsInQueue()
+        return [{'ESR': x, 'isValid': self.verifyIsRecording(os.path.join(location, x) ), 'meta': self.AnalyticsService.CheckJobStatusForUploadedRecording(x, jobs) } for x in esrMatch] 
 
     def RescanLocations(self):
         for centre in os.listdir(self.individualNightWaitingRoom):

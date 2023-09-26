@@ -1,0 +1,39 @@
+{% if night.meta.job_history is mapping %}
+     {% set sorted_steps = night.meta.job_history.keys()|list|sort %}
+    
+
+{% set sorted_steps = night.meta.job_history.keys()|list|sort %}
+{% set latest_step_number = sorted_steps[-1] if sorted_steps else None %}
+{% set latest_job = night.meta.job_history[latest_step_number] if latest_step_number else None %}
+<!-- Button to Open the Modal -->
+<button type="button" class="btn btn-sm btn-outline-info" data-toggle="modal" data-target="#jobHistoryModal">
+    {% if latest_job and latest_job.Message == 'Success' %}
+    Success
+    {% else %}
+    Job History
+    {% endif %}
+</button>
+
+<!-- The Modal -->
+<div class="modal" id="jobHistoryModal">
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title">Job Details</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            {% for step, details in night.meta.job_history.items() %}
+            <strong>{{ details['TaskTitle']|e }}</strong>: {{ details['Message']|e }}<br>
+            {% endfor %}
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+        </div>
+    </div>
+</div>
+</div>
+
+{% else %}
+    No Info Yet         
+{% endif %}
