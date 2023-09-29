@@ -64,67 +64,46 @@ class UploadService:
         newCentreUpload.RecordingNumber = recordingNumber
         newCentreUpload.ESR = f'{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(recordingNumber).zfill(2)}'
         newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.ESR)
-
-        # newCentreUpload.ParticipantAge = ParticipantAge
-        # newCentreUpload.ParticipantHeight = ParticipantHeight
-        # newCentreUpload.ParticipantWeight = ParticipantWeight 
-        # newCentreUpload.ParticipantSex = ParticipantSex
-        # newCentreUpload.ParticipantMedicalHistory = ParticipantMedicalHistory
-
         upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
-        
-        # hashids = Hashids(salt=os.environ['HASHIDS_SALT'])
-        # name = hashids.encode(upload.Id)
-        # newCentreUpload.Location = os.path.join(db_c.FolderLocation, name)
-        fpath = os.path.join(UPLOAD_DIR,db_c.FolderLocation, newCentreUpload.ESR)
-
-        #if not exists, create path in individualnightwaitingroom for centre.
-        
+        fpath = os.path.join(UPLOAD_DIR,db_c.FolderLocation)
         if not os.path.exists(fpath):
             os.makedirs(fpath)
         
         cpath = os.path.join(self.individualNightWaitingRoom, db_c.FolderLocation)
         if not os.path.exists(cpath):
             os.makedirs(cpath)
-        
-        # fpath = os.path.join(fpath, newC)
-
-        # with open(fpath, 'wb+') as file_object:
-        #     file_object.write(file.file.read())
         zip_bytes = await file.read()
+        zip_file_path = os.path.join(fpath, f"{newCentreUpload.ESR}.zip")  # Construct the path for the ZIP file
+        with open(zip_file_path, 'wb') as zf:
+            zf.write(zip_bytes)
 
-        # Create an in-memory file-like object
-        zip_file = io.BytesIO(zip_bytes)
+        
 
-        # Open the zip file
-        with ZipFile(zip_file, 'r') as zip_obj:
-            # Extract and save each file in the zip
-            dirs = zip_obj.infolist()
-            base_folder_names = set()
 
-            for file_info in zip_obj.infolist():
-                base_folder_name = os.path.dirname(file_info.filename)
-                base_folder_names.add(base_folder_name)
+        body = {
+            'name': f"{newCentreUpload.ESR}.zip",
+            'path': db_c.FolderLocation,
+            'dataset': False,
+            'centreId': db_c.Id,
+            'uploadId': upload.Id
+        }
+        connection = pika.BlockingConnection(self.connection_params)
+        channel = connection.channel()
+        # # Declare the queue
+        channel.queue_declare(queue=os.environ['SPLITTER_QUEUE_NAME'], durable=True)
+        # # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
+        channel.basic_publish(
+            exchange='',
+            routing_key=os.environ['SPLITTER_QUEUE_NAME'],
+            body=json.dumps(body),
+            properties=pika.BasicProperties(
+            delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
+        ))
+        # # Close the connection
+        connection.close()
 
-            if len(base_folder_names) != 1:
-                raise ValueError({"message": "Invalid zip file. There should be only one base folder."})
 
-            base_folder_name = base_folder_names.pop()
-            print(f"~\tBase folder: {base_folder_name}")
-            for file_info in zip_obj.infolist():
-                if file_info.is_dir():
-                    continue
-                if not file_info.filename.startswith(f"{base_folder_name}/"):
-                    continue
-                print(f"\t z:{file_info.filename}")
-                file_content = zip_obj.read(file_info)
-                extracted_file_name = os.path.basename(file_info.filename)
-                
-                file_name = file_info.filename
-                # Save the file content or process it as needed
-                # For example, save it to disk
-                with open(os.path.join(fpath, extracted_file_name), "wb") as output_file:
-                    output_file.write(file_content)
+
 
         zabbix_server = '130.208.209.7'
 
