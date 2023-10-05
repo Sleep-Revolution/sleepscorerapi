@@ -111,7 +111,7 @@ class AnalyticsService:
 
         if is_in_queue:
             return create_status_object(job_exists=True, job_history=cleaned_job_history)
-        
+            
         if not cleaned_job_history:
             return create_status_object(is_error=True)
         

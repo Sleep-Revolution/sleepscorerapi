@@ -11,8 +11,7 @@
     <div class="col-md-6">
       <h4 class="display-6 fw-bold lh-1 mb-3">Data Upload Portal</h4>
       <p class="lead">Welcome to the Sleep Revolution Data Upload Portal, a platform for participating research centers to securely submit their sleep measurement data. Upload individual zip files containing a single sleep study, which will then be accessible on the scoring platform at <a href="#">https://score.sleep.ru.is</a> . </p>
-      <!-- <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-      </div> -->
+      
     </div>
   </div>
 </div>
@@ -142,6 +141,16 @@
     updateEllipsis()
     ellipsisInterval = setInterval(updateEllipsis, 750);
 
+    const existingRecordingNumbers = [
+      {% for upload in uploads %}
+          {{ upload.RecordingNumber }},
+      {% endfor %}
+    ];    
+
+    function recordingNumberExists(recordingNumber) {
+    return existingRecordingNumbers.includes(recordingNumber);
+}
+
     function updateRecordingDetails() {
         let centreMemberNumber = "{{centre.MemberNumber}}"; // Get the centre ID value from your server-side code
         if(centreMemberNumber.length < 2){
@@ -161,22 +170,32 @@
           recordingNumber = recordingNumber <= 9 ? `0${recordingNumber}` : `${recordingNumber}`
           recordingDetails.innerHTML = `{{centre.Prefix}}${centreMemberNumber}${recordingNumber}`; // Update the content of the recordingDetails div with the concatenated values
         }
+
+        updateSubmitButtonStatus(); 
     }
 
     function updateSubmitButtonStatus() {
-        const submitButton = document.getElementById("upload-button");
-        const form = document.getElementById("upload-form");
+      const submitButton = document.getElementById("upload-button");
+      const form = document.getElementById("upload-form");
 
-        // Check if all required fields in the form are filled
-        const isFormValid = form.checkValidity();
+      // Check if all required fields in the form are filled
+      const isFormValid = form.checkValidity();
 
-        // Enable or disable the submit button based on form validation
-        if (isFormValid) {
-            submitButton.removeAttribute("disabled");
-        } else {
-            submitButton.setAttribute("disabled", "disabled");
-        }
-    }
+      const recordingNumberInput = document.getElementById("recordingNumber"); // Get the recording number input element
+      const recordingNumber = recordingNumberInput.value; // Get the recording number value from the input element
+      
+      // If the recording number is in the existing recordings list, the form is invalid
+      if (recordingNumberExists(parseInt(recordingNumber))) {
+          submitButton.setAttribute("disabled", "disabled");
+          submitButton.innerHTML = "Duplicate Recording Number";
+      } else if (!isFormValid) {
+          submitButton.setAttribute("disabled", "disabled");
+          submitButton.innerHTML = "Fill All Fields";
+      } else {
+          submitButton.removeAttribute("disabled");
+          submitButton.innerHTML = "<i class='bx bxs-cloud-upload' style='font-size:1.4em;'></i><span id='loadingSpinner' class='spinner-border spinner-border-sm' role='status' aria-hidden='true' style='display:none;'></span> Submit";
+      }
+  }
 
     // Attach the updateSubmitButtonStatus function to input events on required fields
 

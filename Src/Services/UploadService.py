@@ -119,6 +119,14 @@ class UploadService:
         #  This is going in another place!
         
 
+    def getAllUploadsForCentre(self, centreId: int):
+        uploads = self.UploadRepository.GetAllUploadsForCentre(centreId)
+        centre = self.AuthenticationRepository.GetCentreById(centreId)
+
+        for i in range(len(uploads)):
+            uploads[i].RecordingIdentifier = f"{centre.Prefix}{str(centre.MemberNumber).zfill(2)}{str(uploads[i].RecordingNumber).zfill(2)}" 
+        return uploads
+
     def addNightToUpload(self, uploadId: int, nightLocation:str, quality:str, metadata:str):
         
         db_u = self.UploadRepository.GetUploadById(uploadId)
