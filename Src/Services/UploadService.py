@@ -59,6 +59,12 @@ class UploadService:
         if not db_c:
             raise ValueError(f"Centre with id {centreId} does not exist")
 
+
+        existingUploads = self.UploadRepository.GetAllUploadsForCentre(centreId)
+        
+        if recordingNumber in [_.RecordingNumber for _ in existingUploads]:
+            raise ValueError(f"Recording with number {recordingNumber} already exists for this center.")
+
         newCentreUpload =  CentreUpload()
         newCentreUpload.CentreId = centreId
         newCentreUpload.RecordingNumber = recordingNumber
