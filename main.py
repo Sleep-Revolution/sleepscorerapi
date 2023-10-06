@@ -153,7 +153,10 @@ async def GetAllUploadsForCenter(request: Request):
 
     return uploadService.getAllUploadsForCentre(request.state.centre.Id)
 
-
+@app.get('/profile', response_class=HTMLResponse)
+async def userProfile(request: Request):
+    pass
+    
 @app.get('/upload_complete', response_class=HTMLResponse)
 async def uploadComplete(request: Request,  tag:str = Query("")):
     if tag == "":

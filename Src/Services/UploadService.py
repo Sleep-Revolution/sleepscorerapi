@@ -70,7 +70,6 @@ class UploadService:
         newCentreUpload.RecordingNumber = recordingNumber
         newCentreUpload.ESR = f'{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(recordingNumber).zfill(2)}'
         newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.ESR)
-        upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
         fpath = os.path.join(UPLOAD_DIR,db_c.FolderLocation)
         if not os.path.exists(fpath):
             os.makedirs(fpath)
@@ -85,6 +84,7 @@ class UploadService:
 
         
 
+        upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
 
         body = {
             'name': f"{newCentreUpload.ESR}.zip",
