@@ -9,11 +9,11 @@
       <img id="front-image" src="{{ url_for('static', path='img/sleeping_scientist_' ~ random_num ~'.png') }}" class="d-block mx-lg-auto img-fluid" alt="Sleep scientist at work" loading="lazy" width="400" height="300">
     </div>
     <div class="col-md-6">
-      <h4 class="display-6 fw-bold lh-1 mb-3">Data Upload Portal</h4>
-      <p class="lead">Welcome to the Sleep Revolution Data Upload Portal, a platform for participating research centers to securely submit their sleep measurement data. Upload individual zip files containing a single sleep study, which will then be accessible on the scoring platform at <a href="#">https://score.sleep.ru.is</a> . </p>
-      <!-- <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-      </div> -->
-    </div>
+      <h1 class="display-5 fw-bold mb-3">Data Upload Portal</h1>
+      <p class="mb-4">Welcome to the <strong>Sleep Revolution Data Upload Portal</strong>. We offer a secure platform for participating research centers to submit their sleep measurement data.</p>
+      <p class="mb-4">Kindly upload individual zip files that contain a single sleep study. Once processed, these will be made available to you on the Sleep Revolution cluster.</p>
+      <p>For further assistance and common queries, refer to our <a href="https://wiki.sleep.ru.is" class="text-decoration-underline">wiki</a>.</p>
+  </div>
   </div>
 </div>
 
@@ -28,7 +28,7 @@
     <div class="bg-light p-3 rounded-lg mt-4">
       <div class="row align-items-center">
         <div class="col-md-6">
-          <label for="recordingNumber" class="form-label">Recording Number</label>
+          <label for="recordingNumber" class="form-label">Participant Number</label>
           <input class="form-control" type="number" id="recordingNumber" name="file" oninput="updateRecordingDetails()" />
         </div>
         <div class="col-md-6 text-center" id="recordingDetails" style="display: flex; align-items: center; justify-content: center; font-size: 1.5em;">
@@ -79,17 +79,17 @@
       formData.append('file', file);
       formData.append('recordingNumber', $("#recordingNumber").val());
 
-      const participantHeight = $("#ParticipantHeight").val();
-      const participantWeight = $("#ParticipantWeight").val();
-      const participantAge = $("#ParticipantAge").val();
-      const participantMedicalHistory = $("#ParticipantMedicalHistory").val();
-      const participantSex = $("#ParticipantSex").val();
+      // const participantHeight = $("#ParticipantHeight").val();
+      // const participantWeight = $("#ParticipantWeight").val();
+      // const participantAge = $("#ParticipantAge").val();
+      // const participantMedicalHistory = $("#ParticipantMedicalHistory").val();
+      // const participantSex = $("#ParticipantSex").val();
 
-      formData.append('ParticipantHeight', participantHeight);
-      formData.append('ParticipantWeight', participantWeight);
-      formData.append('ParticipantAge', participantAge);
-      formData.append('ParticipantMedicalHistory', participantMedicalHistory);
-      formData.append('ParticipantSex', participantSex);
+      // formData.append('ParticipantHeight', participantHeight);
+      // formData.append('ParticipantWeight', participantWeight);
+      // formData.append('ParticipantAge', participantAge);
+      // formData.append('ParticipantMedicalHistory', participantMedicalHistory);
+      // formData.append('ParticipantSex', participantSex);
 
       console.log(formData);
 
@@ -142,6 +142,16 @@
     updateEllipsis()
     ellipsisInterval = setInterval(updateEllipsis, 750);
 
+    const existingRecordingNumbers = [
+      {% for upload in uploads %}
+          {{ upload.RecordingNumber }},
+      {% endfor %}
+    ];    
+
+    function recordingNumberExists(recordingNumber) {
+    return existingRecordingNumbers.includes(recordingNumber);
+}
+
     function updateRecordingDetails() {
         let centreMemberNumber = "{{centre.MemberNumber}}"; // Get the centre ID value from your server-side code
         if(centreMemberNumber.length < 2){
@@ -161,22 +171,32 @@
           recordingNumber = recordingNumber <= 9 ? `0${recordingNumber}` : `${recordingNumber}`
           recordingDetails.innerHTML = `{{centre.Prefix}}${centreMemberNumber}${recordingNumber}`; // Update the content of the recordingDetails div with the concatenated values
         }
+
+        updateSubmitButtonStatus(); 
     }
 
     function updateSubmitButtonStatus() {
-        const submitButton = document.getElementById("upload-button");
-        const form = document.getElementById("upload-form");
+      const submitButton = document.getElementById("upload-button");
+      const form = document.getElementById("upload-form");
 
-        // Check if all required fields in the form are filled
-        const isFormValid = form.checkValidity();
+      // Check if all required fields in the form are filled
+      const isFormValid = form.checkValidity();
 
-        // Enable or disable the submit button based on form validation
-        if (isFormValid) {
-            submitButton.removeAttribute("disabled");
-        } else {
-            submitButton.setAttribute("disabled", "disabled");
-        }
-    }
+      const recordingNumberInput = document.getElementById("recordingNumber"); // Get the recording number input element
+      const recordingNumber = recordingNumberInput.value; // Get the recording number value from the input element
+      
+      // If the recording number is in the existing recordings list, the form is invalid
+      if (recordingNumberExists(parseInt(recordingNumber))) {
+          submitButton.setAttribute("disabled", "disabled");
+          submitButton.innerHTML = "Duplicate Recording Number";
+      } else if (!isFormValid) {
+          submitButton.setAttribute("disabled", "disabled");
+          submitButton.innerHTML = "Fill All Fields";
+      } else {
+          submitButton.removeAttribute("disabled");
+          submitButton.innerHTML = "<i class='bx bxs-cloud-upload' style='font-size:1.4em;'></i><span id='loadingSpinner' class='spinner-border spinner-border-sm' role='status' aria-hidden='true' style='display:none;'></span> Submit";
+      }
+  }
 
     // Attach the updateSubmitButtonStatus function to input events on required fields
 

@@ -36,7 +36,8 @@ class UploadRepository:
 
     def GetAllUploadsForCentre(self, centreId):
         with self.Session() as session:
-            return session.query(CentreUpload).filter(CentreUpload.CentreId == centreId).all()
+            uploads = session.query(CentreUpload).filter(CentreUpload.CentreId == centreId).all()
+            return uploads
 
     def GetAllCentres(self):
         with self.Session() as session:
