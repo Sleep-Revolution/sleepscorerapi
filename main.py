@@ -95,11 +95,12 @@ async def home(request: Request):
     if not request.state.centre:
         print("redirecting due to no creds")
         return RedirectResponse('/login')
-    print("this is the centre", request.state.centre)
+        
+    uploads = uploadService.getAllUploadsForCentre(request.state.centre.Id)
     data = {
         "page": "Home page",
     }
-    return templates.TemplateResponse("index.html", {"request": request, "data": data, "centre": request.state.centre})
+    return templates.TemplateResponse("index.html", {"request": request, "data": data, "centre": request.state.centre, "uploads":uploads})
 
 
 def tagize(success, reason):
@@ -142,6 +143,20 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
         dbi = tagize(True, "")
         return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
 
+@app.get('/uploads', response_class=JSONResponse)
+async def GetAllUploadsForCenter(request: Request):
+
+    print(request)
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login', status_code=302)
+
+    return uploadService.getAllUploadsForCentre(request.state.centre.Id)
+
+@app.get('/profile', response_class=HTMLResponse)
+async def userProfile(request: Request):
+    pass
+    
 @app.get('/upload_complete', response_class=HTMLResponse)
 async def uploadComplete(request: Request,  tag:str = Query("")):
     if tag == "":

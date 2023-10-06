@@ -5,6 +5,15 @@ from sqlalchemy.orm import relationship
 from Src.Models.Database import Base
 from sqlalchemy.sql import func
 
+
+class CentreDTO:
+    def __init__(self, centre):
+        self.Id = centre.Id
+        self.CentreName = centre.CentreName
+        self.Description = centre.Description
+        self.Prefix = centre.Prefix
+        self.MemberNumber = centre.MemberNumber
+        
 class Centre(Base):
     __tablename__ = "Centres"
     Id = Column(Integer, primary_key=True, index=True)
@@ -19,7 +28,8 @@ class Centre(Base):
     PasswordSalt = Column(LargeBinary)
     LastLogin = Column(DateTime(timezone=True))
     CentreUploads = relationship("CentreUpload", back_populates="Centre")
-
+    def ToDto(self):
+        return CentreDTO(self)
 
 class CentreUpload(Base):
     __tablename__ = "CentreUploads"
