@@ -133,7 +133,7 @@ class UploadService:
             uploads[i].RecordingIdentifier = f"{centre.Prefix}{str(centre.MemberNumber).zfill(2)}{str(uploads[i].RecordingNumber).zfill(2)}" 
         return uploads
 
-    def addNightToUpload(self, uploadId: int, nightLocation:str, quality:str, metadata:str):
+    def addNightToUpload(self, uploadId: int, nightNumber:int):
         
         db_u = self.UploadRepository.GetUploadById(uploadId)
         if not db_u:
@@ -145,13 +145,9 @@ class UploadService:
 
 
         newNight = Night()
-        newNight.IsFaulty = False if quality == 'good'  else True
         newNight.UploadId = uploadId
-        newNight.Location = nightLocation
-        newNight.metadata = metadata
-        newNight.NightNumber = int(nightLocation[-2:])
-
-        self.UploadRepository.AddNightToUpload(newNight)
+        newNight.NightNumber = nightNumber
+        db_night = self.UploadRepository.AddNightToUpload(newNight)
         # Id = Column(Integer, primary_key=True, index=True)
         # UploadId = Column(Integer, ForeignKey("CentreUploads.Id"))
         # NightNumber = Column(Integer)
@@ -159,12 +155,16 @@ class UploadService:
         # IsFaulty = Column(Boolean)
         # Reviewed = Column(Boolean)
         # Upload = relationship("CentreUpload", back_populates="")
+        ESR = db_c.Prefix + str(db_c.MemberNumber).zfill(2) + db_u.RecordingNumber + str(nightNumber).zfill(2)
+        nightLocation = os.path.join(os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM'], db_c.FolderLocation, ESR)
 
         body = {
             'name': os.path.basename(nightLocation),
             'path': db_c.FolderLocation,
             'dataset': False,
-            'centreId': db_c.Id
+            'centreId': db_c.Id,
+            'uploadId': db_u.Id,
+            'nightId': db_night.Id
         }
         connection = pika.BlockingConnection(self.connection_params)
         channel = connection.channel()
@@ -181,17 +181,18 @@ class UploadService:
         # # Close the connection
         connection.close()
 
+
+
+
+
+
+
     async def createDataset(self, file, datasetName):
         
         fpath = os.path.join(UPLOAD_DIR,"DATASETS", datasetName)
         zip_bytes = await file.read()
 
-        # Create an in-memory file-like object
         zip_file = io.BytesIO(zip_bytes)
-        # with ZipFile(zip_file, 'r') as zip_obj:
-        #     for file_info in zip_obj.infolist():
-        #         extracted_file_name = os.path.join(fpath, file_info.filename)
-        #         zip_obj.extract(file_info, fpath)
         
         with ZipFile(zip_file, 'r') as zip_obj:
             file_list = zip_obj.infolist()
@@ -202,28 +203,6 @@ class UploadService:
                 zip_obj.extract(file_info, fpath)
                     # pbar.update(1)  # Update the progress bar
 
-
-        # Open the zip file
-        # with ZipFile(zip_file, 'r') as zip_obj:
-        #     # Extract and save each file in the zip
-        #     dirs = zip_obj.infolist()
-        #     base_folder_names = set()
-
-        #     for file_info in zip_obj.infolist():
-        #         base_folder_name = os.path.dirname(file_info.filename)
-        #         base_folder_names.add(base_folder_name)
-
-            
-        #     for file_info in zip_obj.infolist():
-        #         print(f"\t z:{file_info.filename}")
-        #         file_content = zip_obj.read(file_info)
-        #         extracted_file_name = os.path.basename(file_info.filename)
-                
-        #         file_name = file_info.filename
-        #         # Save the file content or process it as needed
-        #         # For example, save it to disk
-        #         with open(os.path.join(fpath, extracted_file_name), "wb") as output_file:
-        #             output_file.write(file_content)
 
     def listDatasets(self):
         fpath = os.path.join(DATASET_DIR)

@@ -1,6 +1,6 @@
 import json
 from sqlalchemy.orm import Session
-from Src.Models.Models import Centre, CentreCreate, AuthCredentials, LogDataEntry, LogEntity
+from Src.Models.Models import Centre, CentreCreate, AuthCredentials, NightLogDataEntry, NightLogEntity, UploadLogDataEntry, UploadLogEntity
 import bcrypt
 from Src.Repositories.AnalyticsRepository import AnalyticsRepository 
 from Src.Infrastructure.JWT import CreateAccessToken
@@ -17,11 +17,13 @@ class AnalyticsService:
     # def GetAllLogs(self):
     #     return self.AnalyticsRepository.GetAllCentres()
 
-    def AddLog(self, log:LogEntity):
+    def AddLogToNight(self, log:NightLogDataEntry):
         l = log.ToEntry()
-        return self.AnalyticsRepository.AddLog(l)
+        return self.AnalyticsRepository.AddLogToNight(l)
 
-
+    def AddLogToUpload(self, log:UploadLogEntity):
+        l = log.ToEntry()
+        return self.AnalyticsRepository.AddLogToUpload(l)
 
     def GetJobsInQueue(self):
         get_messages_url = f"http://130.208.209.2:15672/api/queues/%2f/dev_task_queue/get"
@@ -111,7 +113,7 @@ class AnalyticsService:
 
         if is_in_queue:
             return create_status_object(job_exists=True, job_history=cleaned_job_history)
-            
+
         if not cleaned_job_history:
             return create_status_object(is_error=True)
         
@@ -146,11 +148,13 @@ class AnalyticsService:
 
 
     def GetHistoryForRecordingInDataset(self, recordingName, datasetName):
-        return self.AnalyticsRepository.GetAllLogsForFile(recordingName, datasetName)
+        pass
+        # return self.AnalyticsRepository.GetAllLogsForFile(recordingName, datasetName)
 
 
     def GetHistoryForUploadedRecording(self, ESR):
-        return self.AnalyticsRepository.GetAllLogsForUploadedRecording(ESR)
+        pass
+        # return self.AnalyticsRepository.GetAllLogsForUploadedRecording(ESR)
 
 
     # def GetLastJobStatus(self, recordingName, datasetName):

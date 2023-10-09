@@ -11,7 +11,7 @@ from Src.Services.AnalyticsService import AnalyticsService
 
 from Src.Services.UploadService import UploadService
 from Src.Infrastructure.JWT import JWTBearer, ParseAccessToken
-from Src.Models.Models import CentreCreate, AuthCredentials, LogEntity
+from Src.Models.Models import CentreCreate, AuthCredentials, NightLogEntity, UploadLogEntity
 import ipaddress
 from Src.Infrastructure.Utils import format_last_logged_in
 from Src.Infrastructure.ErrorMiddleware import ErrorMiddleware
@@ -142,6 +142,14 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
 
         dbi = tagize(True, "")
         return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
+
+
+@app.post("/add-night-to-upload/{uploadId}/{nightNumber}")
+async def AddNightToUpload(request, uploadId:int, nightNumber:int):
+
+    await uploadService.addNightToUpload(uploadId, nightNumber)
+    
+
 
 @app.get('/uploads', response_class=JSONResponse)
 async def GetAllUploadsForCenter(request: Request):
@@ -278,10 +286,13 @@ async def GetAllDatasets(request: Request, name:str):
         recordings = uploadService.listDataset(name)
         return templates.TemplateResponse("Admin/datasetview.html", {"request": request, "centre": request.state.centre, "datasetName": name, "recordings": recordings })
 
-@app.post("/meta/log")
-async def PukeLog(request: Request, log: LogEntity):
-    print("Got a logggg")
-    analyticsService.AddLog(log)
+@app.post("/meta/log_night")
+async def PukeLog(request: Request, log: NightLogEntity):
+    analyticsService.AddLogToNight(log)
+    
+@app.post("/meta/log_upload")
+async def PukeLog(request: Request, log: UploadLogEntity):
+    analyticsService.AddLogToUpload(log)
     
 
 @app.post("/admin/dataset/{name}", response_class=HTMLResponse)
@@ -362,40 +373,40 @@ async def AddAccount(request: Request, centreId: int,
     return RedirectResponse('/admin/accounts', status_code=302)
 
 
-@app.post("/admin/upload/{id}/nights", response_class=HTMLResponse)
-async def AddNights(id: int, request: Request):
-    form_data = await request.form()
-    form_data = list(form_data.items())
-    if form_data[0][0] != 'centre_id':
-        raise ValueError("Incorrect form received for nights.")
+# @app.post("/admin/upload/{id}/nights", response_class=HTMLResponse)
+# async def AddNights(id: int, request: Request):
+#     form_data = await request.form()
+#     form_data = list(form_data.items())
+#     if form_data[0][0] != 'centre_id':
+#         raise ValueError("Incorrect form received for nights.")
 
-    centre_id = form_data[0][1]
+#     centre_id = form_data[0][1]
 
-    form_data = form_data[1:]
-    metadata = list(filter(lambda x: 'metadata' in x[0], form_data))
-    qualdata = list(filter(lambda x: x not in metadata, form_data))
+#     form_data = form_data[1:]
+#     metadata = list(filter(lambda x: 'metadata' in x[0], form_data))
+#     qualdata = list(filter(lambda x: x not in metadata, form_data))
 
-    metadata.sort(key = lambda x: x[0])
-    qualdata.sort(key = lambda x: x[0])
+#     metadata.sort(key = lambda x: x[0])
+#     qualdata.sort(key = lambda x: x[0])
     
-    if len(metadata) != len(qualdata):
-        raise ValueError("Incorrect length of metadata and quality data.")
+#     if len(metadata) != len(qualdata):
+#         raise ValueError("Incorrect length of metadata and quality data.")
 
-    for md, qd in zip(metadata, qualdata):
-        if md[0].split('/')[1] != qd[0].split('/')[1]:
-            raise ValueError("Mismatch in tag for quality and metadata in adding nights. ")
-        loc = qd[0]
-        quality = qd[1]
-        mdata = md[1]
-        uploadService.addNightToUpload(id, loc, quality, mdata)
+#     for md, qd in zip(metadata, qualdata):
+#         if md[0].split('/')[1] != qd[0].split('/')[1]:
+#             raise ValueError("Mismatch in tag for quality and metadata in adding nights. ")
+#         loc = qd[0]
+#         quality = qd[1]
+#         mdata = md[1]
+#         uploadService.addNightToUpload(id, loc, quality, mdata)
 
-    for nightLocation, quality in form_data[1:]:
-        # Extract the values for each row
-        recording_quality = quality
+#     for nightLocation, quality in form_data[1:]:
+#         # Extract the values for each row
+#         recording_quality = quality
 
-        # Perform further processing or save the data to a file or database
-        # Example:
-        print(f"Location: {nightLocation}, Recording Quality: {recording_quality}")
+#         # Perform further processing or save the data to a file or database
+#         # Example:
+#         print(f"Location: {nightLocation}, Recording Quality: {recording_quality}")
         
 
 

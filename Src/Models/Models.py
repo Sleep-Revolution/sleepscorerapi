@@ -13,7 +13,7 @@ class CentreDTO:
         self.Description = centre.Description
         self.Prefix = centre.Prefix
         self.MemberNumber = centre.MemberNumber
-        
+
 class Centre(Base):
     __tablename__ = "Centres"
     Id = Column(Integer, primary_key=True, index=True)
@@ -43,8 +43,6 @@ class CentreUpload(Base):
     ESR = ""#f"{CentreId}{RecordingNumber}"
 
 
-
-
 class Night(Base):
     __tablename__ = "Nights"
     Id = Column(Integer, primary_key=True, index=True)
@@ -54,12 +52,6 @@ class Night(Base):
     IsFaulty = Column(Boolean)
     Upload = relationship("CentreUpload", back_populates="")
 
-
-
-# class Dataset(Base):
-#     __tablename__ = "Datasets"
-#     Id = Column(Integer, primary_key=True, index=True)
-#     Id = Column(String)
 
 class CentreCreate(BaseModel):
     CentreName: str
@@ -72,9 +64,8 @@ class AuthCredentials(BaseModel):
     Email: str
     Password: str
 
-class LogEntity(BaseModel):
-    CentreId: int
-    FileName: str
+class NightLogEntity(BaseModel):
+    NightId: str
     StepNumber: int
     TaskTitle: str
     Progress: int
@@ -82,8 +73,29 @@ class LogEntity(BaseModel):
     DatasetName: str
 
     def ToEntry(self):
-        d = LogDataEntry()
-        d.CentreId=self.CentreId
+        d = NightLogDataEntry()
+        d.NightId=self.NightId
+        d.Message=self.Message
+        d.Progress=self.Progress
+        d.TaskTitle=self.TaskTitle
+        d.StepNumber=self.StepNumber
+        d.DatasetName=self.DatasetName
+        return d
+
+
+
+class UploadLogEntity(BaseModel):
+    CentreId: int
+    FileName: str
+    UploadId: str
+    StepNumber: int
+    TaskTitle: str
+    Progress: int
+    Message: str
+    DatasetName: str
+    def ToEntry(self):
+        d = UploadLogDataEntry()
+        d.UploadId=self.UploadId
         d.Message=self.Message
         d.Progress=self.Progress
         d.TaskTitle=self.TaskTitle
@@ -92,16 +104,25 @@ class LogEntity(BaseModel):
         d.DatasetName=self.DatasetName
         return d
 
-#
-class LogDataEntry(Base):
-    __tablename__ = 'Logs'
-    
+class NightLogDataEntry(Base):
+    __tablename__ = 'NightLogs'
     Id = Column(Integer, primary_key=True)
     FileName = Column(String)
+    NightId = Column(Integer, ForeignKey("Nights.Id"))
     Timestamp = Column(DateTime, default=func.now())
     StepNumber = Column(Integer)
     TaskTitle = Column(String)
     Progress = Column(Integer)
     Message = Column(String)
     DatasetName = Column(String)
-    CentreId = Column(Integer)
+
+class UploadLogDataEntry(Base):
+    __tablename__ = 'UploadLogs'
+    Id = Column(Integer, primary_key=True)
+    UploadId = Column(Integer, ForeignKey("Uploads.Id"))
+    Timestamp = Column(DateTime, default=func.now())
+    StepNumber = Column(Integer)
+    TaskTitle = Column(String)
+    Progress = Column(Integer)
+    Message = Column(String)
+    DatasetName = Column(String)
