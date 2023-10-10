@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.orm import sessionmaker
 import os
-from Src.Models.Models import NightLogDataEntry
+from Src.Models.Models import NightLogDataEntry, UploadLogDataEntry
 
 import logging
 logging.basicConfig()
@@ -49,6 +49,15 @@ class AnalyticsRepository:
             return session.query(NightLogDataEntry).filter(NightLogDataEntry.NightId == nightId).all()
 
     def AddLogToNight(self, log: NightLogDataEntry):
+        print(log.__dict__)
+
+        with self.Session() as session:
+            session.add(log)
+            session.commit()
+            session.refresh(log)
+            return log
+    
+    def AddLogToUpload(self, log: UploadLogDataEntry):
         print(log.__dict__)
 
         with self.Session() as session:

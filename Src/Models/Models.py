@@ -85,8 +85,6 @@ class NightLogEntity(BaseModel):
 
 
 class UploadLogEntity(BaseModel):
-    CentreId: int
-    FileName: str
     UploadId: str
     StepNumber: int
     TaskTitle: str
@@ -100,7 +98,6 @@ class UploadLogEntity(BaseModel):
         d.Progress=self.Progress
         d.TaskTitle=self.TaskTitle
         d.StepNumber=self.StepNumber
-        d.FileName=self.FileName
         d.DatasetName=self.DatasetName
         return d
 
@@ -119,7 +116,7 @@ class NightLogDataEntry(Base):
 class UploadLogDataEntry(Base):
     __tablename__ = 'UploadLogs'
     Id = Column(Integer, primary_key=True)
-    UploadId = Column(Integer, ForeignKey("Uploads.Id"))
+    UploadId = Column(Integer, ForeignKey("CentreUploads.Id"))
     Timestamp = Column(DateTime, default=func.now())
     StepNumber = Column(Integer)
     TaskTitle = Column(String)

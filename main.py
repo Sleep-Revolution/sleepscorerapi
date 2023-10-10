@@ -146,10 +146,14 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
 
 @app.post("/add-night-to-upload/{uploadId}/{nightNumber}")
 async def AddNightToUpload(request, uploadId:int, nightNumber:int):
-
+    print("Adding night to upload", uploadId, nightNumber)
     await uploadService.addNightToUpload(uploadId, nightNumber)
     
 
+@app.post("/create-new-job-for-upload/{uploadId}")
+async def CreateJobForUpload(request:Request, uploadId: int):
+    print(uploadId)
+    uploadService.createJobForUpload(uploadId)
 
 @app.get('/uploads', response_class=JSONResponse)
 async def GetAllUploadsForCenter(request: Request):

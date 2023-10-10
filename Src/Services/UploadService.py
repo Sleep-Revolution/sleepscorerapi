@@ -86,8 +86,46 @@ class UploadService:
 
         upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
 
+        
+
+        self.createJobForUpload(upload.Id)
+
+
+        zabbix_server = '130.208.209.7'
+
+        # Create metrics
+        metrics = [ZabbixMetric('sleepwell.sleep.ru.is', 'ESADA.upload', db_c.CentreName)]
+
+        # Create a ZabbixSender instance
+        zbx = ZabbixSender(zabbix_server)
+
+        # Send metrics to zabbix
+        zbx.send(metrics)
+        #send_to_zabbix([Metric('sleepwell.sleep.ru.is', 'ESADA.upload',  db_c.CentreName)], zabbix_server, 10051)
+        #  This is going in another place!
+
+    def createJobForUpload(self, uploadId: int): 
+        
+        upload = self.UploadRepository.GetUploadById(uploadId)
+        db_c = self.AuthenticationRepository.GetCentreById(upload.CentreId)
+        
+        ESR = f"{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(upload.RecordingNumber).zfill(2)}"
+        
+
+
+        if not os.path.isfile(os.path.join(
+                UPLOAD_DIR,
+                db_c.FolderLocation,
+                ESR + '.zip'
+            )):
+            raise Exception("Did not find a zip file with the name " + os.path.join(
+                UPLOAD_DIR,
+                db_c.FolderLocation,
+                ESR + '.zip'
+            ))
+
         body = {
-            'name': f"{newCentreUpload.ESR}.zip",
+            'name': f"{ESR}.zip",
             'path': db_c.FolderLocation,
             'dataset': False,
             'centreId': db_c.Id,
@@ -108,22 +146,6 @@ class UploadService:
         # # Close the connection
         connection.close()
 
-
-
-
-        zabbix_server = '130.208.209.7'
-
-        # Create metrics
-        metrics = [ZabbixMetric('sleepwell.sleep.ru.is', 'ESADA.upload', db_c.CentreName)]
-
-        # Create a ZabbixSender instance
-        zbx = ZabbixSender(zabbix_server)
-
-        # Send metrics to zabbix
-        zbx.send(metrics)
-        #send_to_zabbix([Metric('sleepwell.sleep.ru.is', 'ESADA.upload',  db_c.CentreName)], zabbix_server, 10051)
-        #  This is going in another place!
-        
 
     def getAllUploadsForCentre(self, centreId: int):
         uploads = self.UploadRepository.GetAllUploadsForCentre(centreId)

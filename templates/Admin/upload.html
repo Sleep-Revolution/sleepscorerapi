@@ -20,6 +20,18 @@
       $('[data-toggle="popover"]').popover();
   });
   
+  function sendPostRequest(uploadId) {
+    fetch(`/create-new-job-for-upload/${uploadId}`, {
+        method: 'POST',
+    }).then(response => {
+        // You can process the response here if you want.
+        console.log(response);
+    }).catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+
 </script>
 
 {% endblock %}
@@ -36,8 +48,9 @@
         <div class="bg-light p-3 rounded-lg m-3">Uploaded on {{upload.Timestamp}}</div>
 
         
-        <div id="foo" class="bg-light p-3 rounded-lg m-3">ESR{{upload.ESR}}</div>
+        <div id="foo" class="bg-light p-3 rounded-lg m-3">{{upload.ESR}}</div>
 
+        <button onclick="sendPostRequest('{{upload.Id}}')">Create Job For Upload</button>
 
     </div> 
 
@@ -114,7 +127,7 @@
             </tbody>
         </table>
 
-
+        
 
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
