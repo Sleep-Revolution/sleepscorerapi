@@ -145,7 +145,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
 
 
 @app.post("/add-night-to-upload/{uploadId}/{nightNumber}")
-async def AddNightToUpload(request, uploadId:int, nightNumber:int):
+async def AddNightToUpload(request:Request, uploadId:int, nightNumber:int):
     print("Adding night to upload", uploadId, nightNumber)
     await uploadService.addNightToUpload(uploadId, nightNumber)
     
