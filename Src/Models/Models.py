@@ -40,6 +40,7 @@ class CentreUpload(Base):
     Location = Column(String, unique=True)
     Centre = relationship("Centre", back_populates="CentreUploads")
     Nights = relationship("Night", back_populates="Upload")
+    Logs = relationship("UploadLogDataEntry", back_populates="Upload")
     ESR = ""#f"{CentreId}{RecordingNumber}"
 
 
@@ -50,7 +51,8 @@ class Night(Base):
     NightNumber = Column(Integer)
     Location = Column(String)
     IsFaulty = Column(Boolean)
-    Upload = relationship("CentreUpload", back_populates="")
+    Upload = relationship("CentreUpload", back_populates="Nights")
+    Logs = relationship("NightLogDataEntry", back_populates="Night")
 
 
 class CentreCreate(BaseModel):
@@ -104,7 +106,6 @@ class UploadLogEntity(BaseModel):
 class NightLogDataEntry(Base):
     __tablename__ = 'NightLogs'
     Id = Column(Integer, primary_key=True)
-    FileName = Column(String)
     NightId = Column(Integer, ForeignKey("Nights.Id"))
     Timestamp = Column(DateTime, default=func.now())
     StepNumber = Column(Integer)
@@ -112,7 +113,7 @@ class NightLogDataEntry(Base):
     Progress = Column(Integer)
     Message = Column(String)
     DatasetName = Column(String)
-
+    Night = relationship("Night", back_populates="Logs")
 class UploadLogDataEntry(Base):
     __tablename__ = 'UploadLogs'
     Id = Column(Integer, primary_key=True)
@@ -123,3 +124,4 @@ class UploadLogDataEntry(Base):
     Progress = Column(Integer)
     Message = Column(String)
     DatasetName = Column(String)
+    Upload = relationship("CentreUpload", back_populates="Logs")

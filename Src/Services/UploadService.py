@@ -44,7 +44,8 @@ class UploadService:
         return self.UploadRepository.GetUploadById(uploadId)
         
     def GetUploadById(self, id):
-        return self.UploadRepository.GetUploadById(id)
+        x = self.UploadRepository.GetUploadById(id)
+        return x
 
     def GetAllUploads(self):
         pass
@@ -150,9 +151,14 @@ class UploadService:
     def getAllUploadsForCentre(self, centreId: int):
         uploads = self.UploadRepository.GetAllUploadsForCentre(centreId)
         centre = self.AuthenticationRepository.GetCentreById(centreId)
-
+        jobs = self.AnalyticsService.GetJobsForUploadsInQueue()
+        
         for i in range(len(uploads)):
+
             uploads[i].RecordingIdentifier = f"{centre.Prefix}{str(centre.MemberNumber).zfill(2)}{str(uploads[i].RecordingNumber).zfill(2)}" 
+            # uploads[i].IsInQueue is true if a job exists for this upload
+            uploads[i].IsInQueue = True if len(list(filter(lambda x: x['uploadId'] == uploads[i].Id, jobs))) > 0 else False
+
         return uploads
 
     def addNightToUpload(self, uploadId: int, nightNumber:int):
@@ -177,7 +183,7 @@ class UploadService:
         # IsFaulty = Column(Boolean)
         # Reviewed = Column(Boolean)
         # Upload = relationship("CentreUpload", back_populates="")
-        ESR = db_c.Prefix + str(db_c.MemberNumber).zfill(2) + db_u.RecordingNumber + str(nightNumber).zfill(2)
+        ESR = db_c.Prefix + str(db_c.MemberNumber).zfill(2) + str(db_u.RecordingNumber).zfill(2)     + str(nightNumber).zfill(2)
         nightLocation = os.path.join(os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM'], db_c.FolderLocation, ESR)
 
         body = {
