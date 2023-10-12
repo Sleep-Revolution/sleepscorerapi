@@ -37,6 +37,8 @@ class UploadRepository:
     def GetAllUploadsForCentre(self, centreId):
         with self.Session() as session:
             uploads = session.query(CentreUpload).filter(CentreUpload.CentreId == centreId).all()
+            for upload in uploads:
+                upload.Logs
             return uploads
 
     def GetAllCentres(self):
@@ -63,5 +65,13 @@ class UploadRepository:
             cu = session.query(CentreUpload).filter(CentreUpload.Id == uploadId).one()
             cu.Nights
             cu.Centre
+            cu.Logs
             cu.ESR = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}{str(cu.RecordingNumber).zfill(2)}'
             return cu
+    
+    def GetNightsForUpload(self, uploadId):
+        with self.Session() as session:
+            nights = session.query(Night).filter(Night.UploadId == uploadId).all()
+            for night in nights:
+                night.Logs
+            return nights

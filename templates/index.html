@@ -43,8 +43,20 @@
       <input class="form-control" type="file" id="file" name="file" required>
     </div>
 
+
+
+    
     <div class="bg-light rounded-lg p-3 mt-4">
       <div class="d-grid gap-2">
+        <!-- Add a checkbox with an ID and label -->
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="checkbox" onchange="updateSubmitButtonStatus()">
+          <label class="form-check-label" for="checkbox">
+            I certify the file is not containing any personal information as instructed <a href="https://wiki.sleep.ru.is/doku.php?id=esada_instructions:anonymization_instructions" target="_blank" rel="noopener noreferrer">Here</a>
+          </label>
+        </div>
+
+        <!-- Modify the submit button to be initially disabled -->
         <button id="upload-button" class="btn btn-primary" type="submit" disabled>
           <i class="bx bxs-cloud-upload" style="font-size:1.4em;"></i>
           <span id="loadingSpinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none;"></span>
@@ -112,13 +124,6 @@
 
       xhr.onload = function () {
         window.location = xhr.responseURL
-        // console.log(xhr);
-        // if (xhr.status === 302) {
-        //     const newLocation = xhr.getResponseHeader("Location");
-        //     if (newLocation) {
-        //         window.location.href = newLocation;
-        //     }
-        // }
       };
 
       xhr.send(formData);
@@ -138,18 +143,17 @@
         document.getElementById("recordingDetails").innerHTML = `{{centre.Prefix}}${centreMemberNumber}${ellipsis}`;
     }
 
-    // Start the ellipsis animation immediately
-    updateEllipsis()
-    ellipsisInterval = setInterval(updateEllipsis, 750);
+  // Start the ellipsis animation immediately
+  updateEllipsis()
+  ellipsisInterval = setInterval(updateEllipsis, 750);
 
-    const existingRecordingNumbers = [
-      {% for upload in uploads %}
-          {{ upload.RecordingNumber }},
-      {% endfor %}
-    ];    
+  const existingRecordingNumbers = [
+    {% for upload in uploads %}
+    {{ upload.RecordingNumber }},
+    {% endfor %}];   
 
-    function recordingNumberExists(recordingNumber) {
-    return existingRecordingNumbers.includes(recordingNumber);
+  function recordingNumberExists(recordingNumber) {
+  return existingRecordingNumbers.includes(recordingNumber);
 }
 
     function updateRecordingDetails() {
@@ -181,23 +185,28 @@
 
       // Check if all required fields in the form are filled
       const isFormValid = form.checkValidity();
+      const checkbox = document.getElementById('checkbox');
 
       const recordingNumberInput = document.getElementById("recordingNumber"); // Get the recording number input element
       const recordingNumber = recordingNumberInput.value; // Get the recording number value from the input element
       
       // If the recording number is in the existing recordings list, the form is invalid
-      if (recordingNumberExists(parseInt(recordingNumber))) {
-          submitButton.setAttribute("disabled", "disabled");
-          submitButton.innerHTML = "Duplicate Recording Number";
-      } else if (!isFormValid) {
-          submitButton.setAttribute("disabled", "disabled");
-          submitButton.innerHTML = "Fill All Fields";
-      } else {
-          submitButton.removeAttribute("disabled");
-          submitButton.innerHTML = "<i class='bx bxs-cloud-upload' style='font-size:1.4em;'></i><span id='loadingSpinner' class='spinner-border spinner-border-sm' role='status' aria-hidden='true' style='display:none;'></span> Submit";
+      if (checkbox.checked) {
+        if (recordingNumberExists(parseInt(recordingNumber))) {
+            submitButton.setAttribute("disabled", "disabled");
+            submitButton.innerHTML = "Duplicate Recording Number";
+        } else if (!isFormValid) {
+            submitButton.setAttribute("disabled", "disabled");
+            submitButton.innerHTML = "Fill All Fields";
+        } else {
+            submitButton.removeAttribute("disabled");
+            submitButton.innerHTML = "<i class='bx bxs-cloud-upload' style='font-size:1.4em;'></i><span id='loadingSpinner' class='spinner-border spinner-border-sm' role='status' aria-hidden='true' style='display:none;'></span> Submit";
+        }
+      }else{
+            submitButton.setAttribute("disabled", "disabled");
+            submitButton.innerHTML = "Check the box to confirm there is no personal information in the uploaded file";
       }
-  }
-
+    }
     // Attach the updateSubmitButtonStatus function to input events on required fields
 
     document.getElementById("upload-button").setAttribute("disabled", "disabled");
