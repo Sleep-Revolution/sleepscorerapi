@@ -162,7 +162,6 @@ class UploadService:
         return uploads
 
     def addNightToUpload(self, uploadId: int, nightNumber:int):
-        
         db_u = self.UploadRepository.GetUploadById(uploadId)
         if not db_u:
             raise ValueError("No upload found for this night")

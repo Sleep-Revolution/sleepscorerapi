@@ -52,7 +52,7 @@
         <div class="form-check">
           <input class="form-check-input" type="checkbox" id="checkbox" onchange="updateSubmitButtonStatus()">
           <label class="form-check-label" for="checkbox">
-            I certify the file is not containing any personal information.
+            I certify the file is not containing any personal information as instructed <a href="https://wiki.sleep.ru.is/doku.php?id=esada_instructions:anonymization_instructions" target="_blank" rel="noopener noreferrer">Here</a>
           </label>
         </div>
 
@@ -124,13 +124,6 @@
 
       xhr.onload = function () {
         window.location = xhr.responseURL
-        // console.log(xhr);
-        // if (xhr.status === 302) {
-        //     const newLocation = xhr.getResponseHeader("Location");
-        //     if (newLocation) {
-        //         window.location.href = newLocation;
-        //     }
-        // }
       };
 
       xhr.send(formData);
