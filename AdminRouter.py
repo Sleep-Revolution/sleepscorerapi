@@ -132,19 +132,19 @@ async def UploadDetails(request: Request, id: int):
         return RedirectResponse('/login', status_code=302)
     if request.state.centre.IsAdministrator:
         upload = uploadService.GetUploadById(id)
-        nights = uploadService.RescanLocationsForUpload(id)
-        return templates.TemplateResponse("Admin/upload.html", {"request": request, "centre": request.state.centre, 'upload': upload, 'scannedNights': nights})
+        # nights = uploadService.RescanLocationsForUpload(id)
+        return templates.TemplateResponse("Admin/upload.html", {"request": request, "centre": request.state.centre, 'upload': upload})
 
-@AdminRouter.get("/uploads/{id}/scan", response_class=JSONResponse)
-async def ScanPage(request: Request, id: int):
-    if not request.state.centre:
-        print("redirecting due to no creds")
-        return RedirectResponse('/login', status_code=302)
-    if request.state.centre.IsAdministrator:
-        upload = uploadService.GetUploadById(id)
-        return templates.TemplateResponse("Admin/upload_scan.html", {"request": request, "centre": request.state.centre, 'upload': upload})
-    else:
-        return RedirectResponse('/', status_code=302)
+# @AdminRouter.get("/uploads/{id}/scan", response_class=JSONResponse)
+# async def ScanPage(request: Request, id: int):
+#     if not request.state.centre:
+#         print("redirecting due to no creds")
+#         return RedirectResponse('/login', status_code=302)
+#     if request.state.centre.IsAdministrator:
+#         upload = uploadService.GetUploadById(id)
+#         return templates.TemplateResponse("Admin/upload_scan.html", {"request": request, "centre": request.state.centre, 'upload': upload})
+#     else:
+#         return RedirectResponse('/', status_code=302)
 
 @AdminRouter.get("/accounts", response_class=JSONResponse)
 async def GetAllAccounts(request: Request):
