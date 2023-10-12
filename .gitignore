@@ -1,2 +1,10 @@
 __pycache__
 .vscode
+api_env
+bin
+cd
+include
+lib
+lib64
+.pytest_cache
+pyvenv.cfg

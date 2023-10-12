@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.orm import sessionmaker
 import os
-from Src.Models.Models import LogDataEntry
+from Src.Models.Models import NightLogDataEntry, UploadLogDataEntry
 
 import logging
 logging.basicConfig()
@@ -25,25 +25,23 @@ class AnalyticsRepository:
             self.Session = session
 
 
-    def GetAllLogsForCentre(self, centreId):
+    def GetAllLogsForNight(self, nightId):
         with self.Session() as session:
-            return session.query(LogDataEntry).filter(LogDataEntry.CentreId == centreId).all()
-
-    def GetAllLogsForFile(self, filename, datasetName):
-        with self.Session() as session:
-            return session.query(LogDataEntry).filter(LogDataEntry.FileName == filename, LogDataEntry.DatasetName == datasetName).all()
-
-    def GetLastLogForFile(self, filename, datasetName) -> LogDataEntry:
-        with self.Session() as session:
-            return session.query(LogDataEntry).filter(LogDataEntry.FileName == filename, LogDataEntry.DatasetName == datasetName).order_by(LogDataEntry.Id.desc()).first()
-                            
-
-    def GetAllLogsForUploadedRecording(self, ESR):
-        with self.Session() as session:
-            return session.query(LogDataEntry).filter(LogDataEntry.FileName == ESR).order_by(LogDataEntry.Id.desc()).all()
+            return session.query(NightLogDataEntry).filter(NightLogDataEntry.NightId == nightId).all()
         
+    def GetAllLogsForUpload(self, uploadId):
+        with self.Session() as session:
+            return session.query(UploadLogDataEntry).filter(UploadLogDataEntry.UploadId == uploadId).all()
 
-    def AddLog(self, log: LogDataEntry):
+
+    def AddLogToNight(self, log: NightLogDataEntry):
+        with self.Session() as session:
+            session.add(log)
+            session.commit()
+            session.refresh(log)
+            return log
+    
+    def AddLogToUpload(self, log: UploadLogDataEntry):
         print(log.__dict__)
 
         with self.Session() as session:
