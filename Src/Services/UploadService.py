@@ -210,10 +210,6 @@ class UploadService:
 
 
 
-
-
-
-
     async def createDataset(self, file, datasetName):
         
         fpath = os.path.join(UPLOAD_DIR,"DATASETS", datasetName)
@@ -316,18 +312,18 @@ class UploadService:
             # if not regx.fullmatch()
         pass
 
-    def RescanLocationsForUpload(self, uploadId):
-        upload = self.UploadRepository.GetUploadById(uploadId)
-        if not upload:
-            raise ValueError(f"No upload found with Id {uploadId}")
-        #find location of nights for centre.
-        location = os.path.join(self.individualNightWaitingRoom, upload.Centre.FolderLocation)
-        if not os.path.exists(location):
-            print("No location exists.")
-            return []
-        esrMatch = list(filter(lambda x: os.path.basename(x)[:len(upload.ESR)] == upload.ESR, os.listdir(location)))
-        jobs = self.AnalyticsService.GetJobsInQueue()
-        return [{'ESR': x, 'isValid': self.verifyIsRecording(os.path.join(location, x) ), 'meta': self.AnalyticsService.CheckJobStatusForUploadedRecording(x, jobs) } for x in esrMatch] 
+    # def RescanLocationsForUpload(self, uploadId):
+    #     upload = self.UploadRepository.GetUploadById(uploadId)
+    #     if not upload:
+    #         raise ValueError(f"No upload found with Id {uploadId}")
+    #     #find location of nights for centre.
+    #     location = os.path.join(self.individualNightWaitingRoom, upload.Centre.FolderLocation)
+    #     if not os.path.exists(location):
+    #         print("No location exists.")
+    #         return []
+    #     esrMatch = list(filter(lambda x: os.path.basename(x)[:len(upload.ESR)] == upload.ESR, os.listdir(location)))
+    #     jobs = self.AnalyticsService.GetJobsInQueue()
+    #     return [{'ESR': x, 'isValid': self.verifyIsRecording(os.path.join(location, x) ), 'meta': self.AnalyticsService.CheckJobStatusForUploadedRecording(x, jobs) } for x in esrMatch] 
 
     def RescanLocations(self):
         for centre in os.listdir(self.individualNightWaitingRoom):

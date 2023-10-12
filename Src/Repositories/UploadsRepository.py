@@ -66,6 +66,8 @@ class UploadRepository:
             cu.Nights
             cu.Centre
             cu.Logs
+            for night in cu.Nights:
+                night.ESR = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}{str(cu.RecordingNumber).zfill(2)}{str(night.NightNumber).zfill(2)}'
             cu.ESR = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}{str(cu.RecordingNumber).zfill(2)}'
             return cu
     
@@ -74,4 +76,6 @@ class UploadRepository:
             nights = session.query(Night).filter(Night.UploadId == uploadId).all()
             for night in nights:
                 night.Logs
+                night.Upload
+                night.Upload.Centre
             return nights
