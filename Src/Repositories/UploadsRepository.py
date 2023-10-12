@@ -62,7 +62,9 @@ class UploadRepository:
 
     def GetUploadById(self, uploadId) -> CentreUpload:
         with self.Session() as session:
-            cu = session.query(CentreUpload).filter(CentreUpload.Id == uploadId).one()
+            cu = session.query(CentreUpload).filter(CentreUpload.Id == uploadId).first()
+            if not cu:
+                return None
             cu.Nights
             cu.Centre
             cu.Logs
