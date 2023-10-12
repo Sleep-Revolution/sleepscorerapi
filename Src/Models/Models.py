@@ -53,8 +53,7 @@ class Night(Base):
     IsFaulty = Column(Boolean)
     Upload = relationship("CentreUpload", back_populates="Nights")
     Logs = relationship("NightLogDataEntry", back_populates="Night")
-
-
+    
 class CentreCreate(BaseModel):
     CentreName: str
     Description: str

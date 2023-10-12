@@ -58,10 +58,10 @@
       The multi-night recording is in the following folder: {{upload.Location}} in the portal destination folder.
     </div>
     <div class="bg-info p-3 m-3 d-flex rounded-lg justify-content-between align-content-center">
-      The individual night recordings should go into the following location in the individual-night waiting room: {{upload.Location}}xx.
+      The individual night recordings will go into the following location in the individual-night waiting room: {{upload.Location}}xx.
     </div>     
     
-    {% if scannedNights|length > 0 %}
+    {% if upload.Nights|length > 0 %}
 
       <form action="/admin/upload/{{ upload.Id }}/nights" method="post" enctype="multipart/form-data">
         <div class="form-hidden">
@@ -80,12 +80,12 @@
                 </tr>
             </thead>
             <tbody>
-                {% for night in scannedNights %}
+                {% for night in upload.Nights %}
                 <tr>
                     <td>{{ upload.Centre.FolderLocation }}/{{ night.ESR }}</td>
                     <!-- Recording Quality -->
                     <td>
-                        <div class="form-check form-check-inline">
+                        <!-- <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" name="{{centre.FolderLocation}}/{{night.ESR}}" id="inlineRadio1-{{night.ESR}}" value="good">
                             <label class="form-check-label" for="inlineRadio1-{{night.ESR}}">Ok</label>
                         </div>
@@ -98,16 +98,12 @@
                                 <span class="input-group-text">Notes</span>
                             </div>
                             <input type="text" class="form-control" name="metadata/{{night.ESR}}" id="metadata-{{night.ESR}}" placeholder="Metadata for {{night.ESR}}">
-                        </div>
+                        </div> -->
                     </td>
 
                     <!-- Validation -->
                     <td>
-                        {% if night.isValid[0] %}
-                            <span class="text-success">✓ Valid</span>
-                        {% else %}
-                            <span class="text-danger" data-toggle="tooltip" data-placement="left" title="{{night.isValid[1]}}">✕ Not Valid</span>
-                        {% endif %}
+                        No validation is being performed for recordings at this time.
                     </td>
 
                     <!-- ESR -->
@@ -117,8 +113,7 @@
                     <!-- Job Status and Metadata -->
                     <td>
                         
-                        {% include 'jobstatus.jinja2' %}
-                
+                        
                     </td>
 
 
