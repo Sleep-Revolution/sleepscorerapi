@@ -46,6 +46,9 @@ class UploadRepository:
             centres = session.query(Centre).all()
             for centre in centres:
                 centre.CentreUploads
+                for upload in centre.CentreUploads:
+                    upload.Nights
+                    upload.Logs
 
             return centres
 

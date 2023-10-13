@@ -113,22 +113,24 @@ class AnalyticsService:
         
     #     return create_status_object(job_exists=False, job_history=cleaned_job_history)
     
-    def group_job_history(self, job_history):
+    # job_history = a list of UploadLogDataEntry objects
+    def GroupUploadLogs(self, job_history: list[UploadLogDataEntry] ):
         grouped_history = {}
-
+        UploadLogDataEntry.TaskTitle
         for entry in job_history:
-            step = entry['StepNumber']
-            progress = entry['Progress']
-            task_title = entry['TaskTitle']
-            message = entry['Message']
+            step = entry.StepNumber
+            progress = entry.Progress
+            task_title = entry.TaskTitle
+            message = entry.Message
 
             # Always store/overwrite the step with the latest message
             # This ensures that only the final message for each step is recorded
             grouped_history[step] = {
                 'TaskTitle': task_title,
-                'Message': 'Fail' if progress == -1 else 'Success',  # Error message if failed
+                'Message': 'Fail' if progress == -1 else ('Success' if message is None else message),  # Error message if failed
                 'Progress': progress
             }
+            
         
         return grouped_history
 
@@ -183,7 +185,7 @@ class AnalyticsService:
         if not cleaned_job_history:
             return create_status_object(is_error=True)
         
-        cleaned_job_history = self.group_job_history(cleaned_job_history)
+        cleaned_job_history = self.GroupUploadLogs(cleaned_job_history)
         return create_status_object(job_exists=False, job_history=cleaned_job_history)
 
 
