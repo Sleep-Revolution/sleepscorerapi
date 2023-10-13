@@ -82,7 +82,7 @@
             <tbody>
                 {% for night in upload.Nights %}
                 <tr>
-                    <td>{{ upload.Centre.FolderLocation }}/{{ night.ESR }}</td>
+                    <td>{{ upload.Centre.FolderLocation }}/{{ night.RecordingIdentifier }}</td>
                     <!-- Recording Quality -->
                     <td>
                         <!-- <div class="form-check form-check-inline">
@@ -107,7 +107,7 @@
                     </td>
 
                     <!-- ESR -->
-                    <td>{{ night.ESR }}</td>
+                    <td>{{ night.RecordingIdentifier }}</td>
 
                     <!-- Job Status -->
                     <!-- Job Status and Metadata -->

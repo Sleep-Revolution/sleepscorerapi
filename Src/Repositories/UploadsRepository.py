@@ -39,6 +39,7 @@ class UploadRepository:
             uploads = session.query(CentreUpload).filter(CentreUpload.CentreId == centreId).all()
             for upload in uploads:
                 upload.Logs
+                
             return uploads
 
     def GetAllCentres(self):
@@ -72,8 +73,8 @@ class UploadRepository:
             cu.Centre
             cu.Logs
             for night in cu.Nights:
-                night.ESR = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}{str(cu.RecordingNumber).zfill(2)}{str(night.NightNumber).zfill(2)}'
-            cu.ESR = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}{str(cu.RecordingNumber).zfill(2)}'
+                night.RecordingIdentifier = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}-{str(cu.RecordingNumber).zfill(3)}-{str(night.NightNumber).zfill(2)}'
+            cu.RecordingIdentifier = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}-{str(cu.RecordingNumber).zfill(3)}'
             return cu
     
     def GetNightsForUpload(self, uploadId):

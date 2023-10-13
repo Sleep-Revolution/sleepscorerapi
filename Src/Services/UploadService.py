@@ -1,4 +1,5 @@
 import io
+from sqlalchemy.inspection import inspect
 import re
 from urllib.request import HTTPBasicAuthHandler
 from zipfile import ZipFile
@@ -74,8 +75,8 @@ class UploadService:
         newCentreUpload =  CentreUpload()
         newCentreUpload.CentreId = centreId
         newCentreUpload.RecordingNumber = recordingNumber
-        newCentreUpload.ESR = f'{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(recordingNumber).zfill(2)}'
-        newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.ESR)
+        newCentreUpload.RecordingIdentifier = self.GetRecordingIdentifierForUpload(newCentreUpload) #f'{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}-{str(recordingNumber).zfill(2)}'
+        newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.RecordingIdentifier)
         fpath = os.path.join(UPLOAD_DIR,db_c.FolderLocation)
         if not os.path.exists(fpath):
             os.makedirs(fpath)
@@ -83,8 +84,9 @@ class UploadService:
         cpath = os.path.join(self.individualNightWaitingRoom, db_c.FolderLocation)
         if not os.path.exists(cpath):
             os.makedirs(cpath)
+
         zip_bytes = await file.read()
-        zip_file_path = os.path.join(fpath, f"{newCentreUpload.ESR}.zip")  # Construct the path for the ZIP file
+        zip_file_path = os.path.join(fpath, f"{newCentreUpload.RecordingIdentifier}.zip")  # Construct the path for the ZIP file
         with open(zip_file_path, 'wb') as zf:
             zf.write(zip_bytes)
 
@@ -115,23 +117,23 @@ class UploadService:
         upload = self.UploadRepository.GetUploadById(uploadId)
         db_c = self.AuthenticationRepository.GetCentreById(upload.CentreId)
         
-        ESR = f"{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(upload.RecordingNumber).zfill(2)}"
+        recordingIdentifier = self.GetRecordingIdentifierForUpload(upload)  #= f"{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(upload.RecordingNumber).zfill(2)}"
         
 
 
         if not os.path.isfile(os.path.join(
                 UPLOAD_DIR,
                 db_c.FolderLocation,
-                ESR + '.zip'
+                recordingIdentifier + '.zip'
             )):
             raise Exception("Did not find a zip file with the name " + os.path.join(
                 UPLOAD_DIR,
                 db_c.FolderLocation,
-                ESR + '.zip'
+                recordingIdentifier + '.zip'
             ))
 
         body = {
-            'name': f"{ESR}.zip",
+            'name': f"{recordingIdentifier}.zip",
             'path': db_c.FolderLocation,
             'dataset': False,
             'centreId': db_c.Id,
@@ -160,7 +162,7 @@ class UploadService:
         
         for i in range(len(uploads)):
 
-            uploads[i].RecordingIdentifier = f"{centre.Prefix}{str(centre.MemberNumber).zfill(2)}{str(uploads[i].RecordingNumber).zfill(2)}" 
+            uploads[i].RecordingIdentifier = self.GetRecordingIdentifierForUpload(uploads[i]) #f"{centre.Prefix}{str(centre.MemberNumber).zfill(2)}{str(uploads[i].RecordingNumber).zfill(2)}" 
             # uploads[i].IsInQueue is true if a job exists for this upload
             uploads[i].IsInQueue = True if len(list(filter(lambda x: x['uploadId'] == uploads[i].Id, jobs))) > 0 else False
 
@@ -187,8 +189,8 @@ class UploadService:
         # IsFaulty = Column(Boolean)
         # Reviewed = Column(Boolean)
         # Upload = relationship("CentreUpload", back_populates="")
-        ESR = db_c.Prefix + str(db_c.MemberNumber).zfill(2) + str(db_u.RecordingNumber).zfill(2)     + str(nightNumber).zfill(2)
-        nightLocation = os.path.join(os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM'], db_c.FolderLocation, ESR)
+        recordingIdentifier = self.GetRecordingIdentifierForNight(db_night) #db_c.Prefix + str(db_c.MemberNumber).zfill(2) + str(db_u.RecordingNumber).zfill(2)     + str(nightNumber).zfill(2)
+        nightLocation = os.path.join(os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM'], db_c.FolderLocation, recordingIdentifier)
 
         body = {
             'name': os.path.basename(nightLocation),
@@ -352,4 +354,12 @@ class UploadService:
         except requests.exceptions.RequestException as e:
             print('Error: {0}'.format(str(e)))
             return []
-            # text:'{"error":"not_authorised","reason":"Not management user"}'
+
+    def GetRecordingIdentifierForUpload(self, upload:CentreUpload):
+        upload.Centre = self.AuthenticationRepository.GetCentreById(upload.CentreId)
+        return f"{upload.Centre.Prefix}{str(upload.Centre.MemberNumber).zfill(2)}-{str(upload.RecordingNumber).zfill(3)}"
+
+    def GetRecordingIdentifierForNight(self, night: Night):
+        night.Upload = self.GetUploadById(night.UploadId)
+        night.Upload.Centre = self.AuthenticationRepository.GetCentreById(night.Upload.CentreId)
+        return f"{night.Centre.Prefix}{str(night.Centre.MemberNumber).zfill(2)}-{str(night.Upload.RecordingNumber).zfill(3)}-{str(night.NightNumber).zfill(2)}"

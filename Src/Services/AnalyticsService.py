@@ -162,7 +162,7 @@ class AnalyticsService:
     #     return create_status_object(job_exists=False, job_history=cleaned_job_history)
 
 
-    def CheckJobStatusForUploadedRecording(self, uploadId :int, ESR:str, jobs):
+    def CheckJobStatusForUploadedRecording(self, uploadId :int, RecordingIdentifier:str, jobs):
         def create_status_object(is_error=False, job_exists=False, job_history=[]):
             return {
                 "is_error": is_error,
@@ -170,7 +170,7 @@ class AnalyticsService:
                 "job_history": job_history
             }
 
-        is_in_queue = any(job.get("name") == ESR for job in jobs)
+        is_in_queue = any(job.get("name") == RecordingIdentifier for job in jobs)
         
         job_history = self.AnalyticsRepository.GetAllLogsForNight(uploadId)
         
