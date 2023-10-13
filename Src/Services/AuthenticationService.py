@@ -38,7 +38,7 @@ class AuthenticationService:
         newCentre.ResponsibleEmail = ResponsibleEmail
         newCentre.PasswordSalt = bcrypt.gensalt()
         newCentre.PasswordHash = bcrypt.hashpw(Password1.encode('utf-8'), newCentre.PasswordSalt)
-        newCentre.FolderLocation = f'{newCentre.CentreName}'
+        newCentre.FolderLocation = f'{newCentre.Prefix}{str(newCentre.MemberNumber).zfill(2)}'
         newCentre.IsAdministrator = False
         return self.AuthenticationRepository.CreateCentre(newCentre)
     
