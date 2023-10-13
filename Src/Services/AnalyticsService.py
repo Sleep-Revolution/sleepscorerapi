@@ -7,6 +7,8 @@ from Src.Infrastructure.JWT import CreateAccessToken
 import requests
 from requests.auth import HTTPBasicAuth
 import os 
+from typing import List
+
 class AnalyticsService:
     def __init__(self, analyticsRepo=None):
         if analyticsRepo:
@@ -114,7 +116,7 @@ class AnalyticsService:
     #     return create_status_object(job_exists=False, job_history=cleaned_job_history)
     
     # job_history = a list of UploadLogDataEntry objects
-    def GroupUploadLogs(self, job_history: list[UploadLogDataEntry] ):
+    def GroupUploadLogs(self, job_history: List[UploadLogDataEntry] ):
         grouped_history = {}
         UploadLogDataEntry.TaskTitle
         for entry in job_history:
