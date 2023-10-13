@@ -52,7 +52,12 @@ class UploadService:
         # return self.AuthenticationRepository.GetAllCentres()
 
     def GetAllCentres(self):
-        return self.UploadRepository.GetAllCentres()
+        x = self.UploadRepository.GetAllCentres()
+        for centre in x:
+            for upload in centre.CentreUploads:
+                upload.CompressedLogs = AnalyticsService.GroupUploadLogs(None, upload.Logs)
+        return x
+        # return self.UploadRepository.GetAllCentres()
 
 
     async def CreateUpload(self, centreId, file, recordingNumber):
