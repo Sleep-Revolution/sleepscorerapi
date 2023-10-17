@@ -20,6 +20,15 @@ class UploadRepository:
         else:
             self.Session = session
 
+    def GetNightById(self, nightId : int):
+        with self.Session() as session:
+            night = session.query(Night).filter(Night.Id == nightId).first()
+            if night:
+                night.Logs
+                night.Upload
+                night.Upload.Centre
+            return night
+
     def CreateNewUpload(self, newCentreUpload: CentreUpload):
         with self.Session() as session:
             session.add(newCentreUpload)

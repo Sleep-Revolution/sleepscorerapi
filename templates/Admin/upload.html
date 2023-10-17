@@ -17,9 +17,23 @@
 
 <script>
     $(document).ready(function(){
-      $('[data-toggle="popover"]').popover();
-  });
-  
+        $('[data-toggle="popover"]').popover();
+    });
+
+
+    function sendJobCreationRequest(event,nightId){
+        event.preventDefault()
+
+        fetch(`/create-new-job-for-night/${nightId}`, {
+            method: 'POST',
+        }).then(response => {
+        // You can process the response here if you want.
+        console.log(response);
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
   function sendPostRequest(uploadId) {
     fetch(`/create-new-job-for-upload/${uploadId}`, {
         method: 'POST',
@@ -82,7 +96,7 @@
             <tbody>
                 {% for night in upload.Nights %}
                 <tr>
-                    <td>{{ upload.Centre.FolderLocation }}/{{ night.RecordingIdentifier }}</td>
+                    <td>{{ upload.Centre.FolderLocation }}/{{ night.RecordingIdentifier }} </td>
                     <!-- Recording Quality -->
                     <td>
                         <!-- <div class="form-check form-check-inline">
@@ -112,8 +126,7 @@
                     <!-- Job Status -->
                     <!-- Job Status and Metadata -->
                     <td>
-                        
-                        
+                        <button  class="btn btn-secondary" onclick="sendJobCreationRequest(event, {{ night.Id }})">Create Job</button>
                     </td>
 
 
