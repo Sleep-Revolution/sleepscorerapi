@@ -137,11 +137,16 @@ async def AddNightToUpload(request:Request, uploadId:int, nightNumber:int):
     uploadService.addNightToUpload(uploadId, nightNumber)
     
 
-@app.post("/create-new-job-for-upload/{uploadId}")
+@app.post("/create-new-job-for-upload/{uploadId}", response_class=JSONResponse)
 async def CreateJobForUpload(request:Request, uploadId: int):
     print(uploadId)
     uploadService.createJobForUpload(uploadId)
 
+
+@app.post('/create-new-job-for-night/{nightId}', response_class=JSONResponse)
+async def CreateJobForNight(request:Request, nightId: int):
+    await uploadService.CreateJobForNight(nightId)
+    return {"success": True}
 
 @app.get('/uploads', response_class=JSONResponse)
 async def GetAllUploadsForCenter(request: Request):

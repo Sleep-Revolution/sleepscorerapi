@@ -25,17 +25,18 @@
   <form id="upload-form" enctype="multipart/form-data">
     
 
-    <div class="bg-light p-3 rounded-lg mt-4">
-      <div class="row align-items-center">
-        <div class="col-md-6">
+    <div class="row"> <!-- Assuming you want a row here as the previous code seems to be part of one -->
+      <div class="col-md-6">
           <label for="recordingNumber" class="form-label">Participant Number</label>
           <input class="form-control" type="number" id="recordingNumber" name="file" oninput="updateRecordingDetails()" />
-        </div>
-        <div class="col-md-6 text-center" id="recordingDetails" style="display: flex; align-items: center; justify-content: center; font-size: 1.5em;">
-          {{centre.Prefix}}{{centre.MemberNumber}}---
-        </div>
       </div>
-    </div>
+      <div class="col-md-6 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1em;">
+          <label for="recordingDetails" class="form-label">Recording Identifier</label>
+          <span id="recordingDetails" style="font-size: 1.5em;">
+              {{centre.Prefix}}{{centre.MemberNumber}}---
+          </span>
+      </div>
+  </div>
     
 
     <div class="bg-light p-3 rounded-lg mt-4">
@@ -91,17 +92,6 @@
       formData.append('file', file);
       formData.append('recordingNumber', $("#recordingNumber").val());
 
-      // const participantHeight = $("#ParticipantHeight").val();
-      // const participantWeight = $("#ParticipantWeight").val();
-      // const participantAge = $("#ParticipantAge").val();
-      // const participantMedicalHistory = $("#ParticipantMedicalHistory").val();
-      // const participantSex = $("#ParticipantSex").val();
-
-      // formData.append('ParticipantHeight', participantHeight);
-      // formData.append('ParticipantWeight', participantWeight);
-      // formData.append('ParticipantAge', participantAge);
-      // formData.append('ParticipantMedicalHistory', participantMedicalHistory);
-      // formData.append('ParticipantSex', participantSex);
 
       console.log(formData);
 
@@ -140,7 +130,7 @@
         ellipsisCount = (ellipsisCount + 1) % ellipsisOptions.length;
         let centreMemberNumber = "{{centre.MemberNumber}}";
         centreMemberNumber = centreMemberNumber.length == 1 ? `0${centreMemberNumber}`: centreMemberNumber
-        document.getElementById("recordingDetails").innerHTML = `{{centre.Prefix}}${centreMemberNumber}${ellipsis}`;
+        document.getElementById("recordingDetails").innerHTML = `{{centre.Prefix}}${centreMemberNumber}-${ellipsis}`;
     }
 
   // Start the ellipsis animation immediately
@@ -149,8 +139,9 @@
 
   const existingRecordingNumbers = [
     {% for upload in uploads %}
-    {{ upload.RecordingNumber }},
-    {% endfor %}];   
+      {{ upload.RecordingNumber }},
+    {% endfor %}
+  ];   
 
   function recordingNumberExists(recordingNumber) {
   return existingRecordingNumbers.includes(recordingNumber);
@@ -172,8 +163,8 @@
         } else {
           clearInterval(ellipsisInterval); // Clear interval if recording number is set
           const recordingDetails = document.getElementById("recordingDetails"); // Get the recordingDetails div element
-          recordingNumber = recordingNumber <= 9 ? `0${recordingNumber}` : `${recordingNumber}`
-          recordingDetails.innerHTML = `{{centre.Prefix}}${centreMemberNumber}${recordingNumber}`; // Update the content of the recordingDetails div with the concatenated values
+          recordingNumber = String(recordingNumber).padStart(3,'0')
+          recordingDetails.innerHTML = `{{centre.Prefix}}${centreMemberNumber}-${recordingNumber}`; // Update the content of the recordingDetails div with the concatenated values
         }
 
         updateSubmitButtonStatus(); 
