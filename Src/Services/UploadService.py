@@ -156,7 +156,7 @@ class UploadService:
         newNight.UploadId = uploadId
         newNight.NightNumber = nightNumber
         db_night = self.UploadRepository.AddNightToUpload(newNight)
-        self.CreateJobsForNight(db_night.Id)
+        self.CreateJobForNight(db_night.Id)
         
 
     async def CreateJobForNight(self, nightId):
