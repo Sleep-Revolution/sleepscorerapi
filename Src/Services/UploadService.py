@@ -1,4 +1,5 @@
 import io
+from sqlalchemy.inspection import inspect
 import re
 from urllib.request import HTTPBasicAuthHandler
 from zipfile import ZipFile
@@ -10,14 +11,10 @@ from hashids import Hashids
 import pika
 import os 
 import json
-# from tqdm import tqdm
 from pyzabbix import ZabbixMetric, ZabbixSender
 import requests
 from pyzabbix import ZabbixMetric, ZabbixSender
-
 from Src.Services.AnalyticsService import AnalyticsService
-
-
 
 UPLOAD_DIR = os.environ['DATA_ROOT_DIR']
 DATASET_DIR = os.environ['DATASET_DIR']
@@ -35,9 +32,6 @@ class UploadService:
         self.creds = pika.PlainCredentials('server', 'server')
         self.connection_params = pika.ConnectionParameters(os.environ['RABBITMQ_SERVER'], 5672, '/', self.creds)
         self.individualNightWaitingRoom = os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM']
-
-
-    
 
     def GetUploadByName(self, name):
         uploadId = Hashids(salt=os.environ['HASHIDS_SALT']).decode(name)
@@ -57,54 +51,36 @@ class UploadService:
             for upload in centre.CentreUploads:
                 upload.CompressedLogs = AnalyticsService.GroupUploadLogs(None, upload.Logs)
         return x
-        # return self.UploadRepository.GetAllCentres()
-
 
     async def CreateUpload(self, centreId, file, recordingNumber):
         db_c = self.AuthenticationRepository.GetCentreById(centreId)
         if not db_c:
             raise ValueError(f"Centre with id {centreId} does not exist")
-
-
         existingUploads = self.UploadRepository.GetAllUploadsForCentre(centreId)
-        
         if recordingNumber in [_.RecordingNumber for _ in existingUploads]:
             raise ValueError(f"Recording with number {recordingNumber} already exists for this center.")
-
         newCentreUpload =  CentreUpload()
         newCentreUpload.CentreId = centreId
         newCentreUpload.RecordingNumber = recordingNumber
-        newCentreUpload.ESR = f'{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(recordingNumber).zfill(2)}'
-        newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.ESR)
+        newCentreUpload.RecordingIdentifier = self.GetRecordingIdentifierForUpload(newCentreUpload) #f'{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}-{str(recordingNumber).zfill(2)}'
+        newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.RecordingIdentifier)
         fpath = os.path.join(UPLOAD_DIR,db_c.FolderLocation)
         if not os.path.exists(fpath):
             os.makedirs(fpath)
-        
         cpath = os.path.join(self.individualNightWaitingRoom, db_c.FolderLocation)
         if not os.path.exists(cpath):
             os.makedirs(cpath)
         zip_bytes = await file.read()
-        zip_file_path = os.path.join(fpath, f"{newCentreUpload.ESR}.zip")  # Construct the path for the ZIP file
+        zip_file_path = os.path.join(fpath, f"{newCentreUpload.RecordingIdentifier}.zip")  # Construct the path for the ZIP file
         with open(zip_file_path, 'wb') as zf:
             zf.write(zip_bytes)
-
-        
-
         upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
-
-        
-
         self.createJobForUpload(upload.Id)
-
-
         zabbix_server = '130.208.209.7'
-
         # Create metrics
         metrics = [ZabbixMetric('sleepwell.sleep.ru.is', 'ESADA.upload', db_c.CentreName)]
-
         # Create a ZabbixSender instance
         zbx = ZabbixSender(zabbix_server)
-
         # Send metrics to zabbix
         zbx.send(metrics)
         #send_to_zabbix([Metric('sleepwell.sleep.ru.is', 'ESADA.upload',  db_c.CentreName)], zabbix_server, 10051)
@@ -115,23 +91,23 @@ class UploadService:
         upload = self.UploadRepository.GetUploadById(uploadId)
         db_c = self.AuthenticationRepository.GetCentreById(upload.CentreId)
         
-        ESR = f"{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(upload.RecordingNumber).zfill(2)}"
+        recordingIdentifier = self.GetRecordingIdentifierForUpload(upload)  #= f"{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}{str(upload.RecordingNumber).zfill(2)}"
         
 
 
         if not os.path.isfile(os.path.join(
                 UPLOAD_DIR,
                 db_c.FolderLocation,
-                ESR + '.zip'
+                recordingIdentifier + '.zip'
             )):
             raise Exception("Did not find a zip file with the name " + os.path.join(
                 UPLOAD_DIR,
                 db_c.FolderLocation,
-                ESR + '.zip'
+                recordingIdentifier + '.zip'
             ))
 
         body = {
-            'name': f"{ESR}.zip",
+            'name': f"{recordingIdentifier}.zip",
             'path': db_c.FolderLocation,
             'dataset': False,
             'centreId': db_c.Id,
@@ -160,7 +136,7 @@ class UploadService:
         
         for i in range(len(uploads)):
 
-            uploads[i].RecordingIdentifier = f"{centre.Prefix}{str(centre.MemberNumber).zfill(2)}{str(uploads[i].RecordingNumber).zfill(2)}" 
+            uploads[i].RecordingIdentifier = self.GetRecordingIdentifierForUpload(uploads[i]) #f"{centre.Prefix}{str(centre.MemberNumber).zfill(2)}{str(uploads[i].RecordingNumber).zfill(2)}" 
             # uploads[i].IsInQueue is true if a job exists for this upload
             uploads[i].IsInQueue = True if len(list(filter(lambda x: x['uploadId'] == uploads[i].Id, jobs))) > 0 else False
 
@@ -180,23 +156,21 @@ class UploadService:
         newNight.UploadId = uploadId
         newNight.NightNumber = nightNumber
         db_night = self.UploadRepository.AddNightToUpload(newNight)
-        # Id = Column(Integer, primary_key=True, index=True)
-        # UploadId = Column(Integer, ForeignKey("CentreUploads.Id"))
-        # NightNumber = Column(Integer)
-        # Location = Column(String)
-        # IsFaulty = Column(Boolean)
-        # Reviewed = Column(Boolean)
-        # Upload = relationship("CentreUpload", back_populates="")
-        ESR = db_c.Prefix + str(db_c.MemberNumber).zfill(2) + str(db_u.RecordingNumber).zfill(2)     + str(nightNumber).zfill(2)
-        nightLocation = os.path.join(os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM'], db_c.FolderLocation, ESR)
+        self.CreateJobsForNight(db_night.Id)
+        
 
+    async def CreateJobForNight(self, nightId):
+        db_n = self.UploadRepository.GetNightById(nightId)
+        db_c = self.AuthenticationRepository.GetCentreById(db_n.Upload.CentreId)
+        recordingIdentifier = self.GetRecordingIdentifierForNight(db_n) #db_c.Prefix + str(db_c.MemberNumber).zfill(2) + str(db_u.RecordingNumber).zfill(2)     + str(nightNumber).zfill(2)
+        nightLocation = os.path.join(os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM'], db_c.FolderLocation, recordingIdentifier)
         body = {
             'name': os.path.basename(nightLocation),
             'path': db_c.FolderLocation,
             'dataset': False,
             'centreId': db_c.Id,
-            'uploadId': db_u.Id,
-            'nightId': db_night.Id
+            'uploadId': db_n.UploadId,
+            'nightId': db_n.Id
         }
         connection = pika.BlockingConnection(self.connection_params)
         channel = connection.channel()
@@ -213,31 +187,21 @@ class UploadService:
         # # Close the connection
         connection.close()
 
-
-
     async def createDataset(self, file, datasetName):
-        
         fpath = os.path.join(UPLOAD_DIR,"DATASETS", datasetName)
         zip_bytes = await file.read()
-
-        zip_file = io.BytesIO(zip_bytes)
-        
+        zip_file = io.BytesIO(zip_bytes)        
         with ZipFile(zip_file, 'r') as zip_obj:
             file_list = zip_obj.infolist()
             # Create a progress bar using tqdm
-            # with tqdm(total=len(file_list), desc="Extracting files", unit="file") as pbar:
             for file_info in file_list:
                 extracted_file_name = os.path.join(fpath, file_info.filename)
                 zip_obj.extract(file_info, fpath)
                     # pbar.update(1)  # Update the progress bar
 
-
     def listDatasets(self):
         fpath = os.path.join(DATASET_DIR)
         return list(os.listdir(fpath))
-
-
-
 
     def verifyIsRecording(self, path):
         files = os.listdir(path)
@@ -254,8 +218,6 @@ class UploadService:
             valid = False
         return valid, reason
 
-    
-    
     def listDataset(self, name):
         fpath = os.path.join(DATASET_DIR, name)
         r = []
@@ -273,14 +235,11 @@ class UploadService:
     
 
     def CreateJobsForDataset(self, datasetname):
-
         connection = pika.BlockingConnection(self.connection_params)
         channel = connection.channel()
         # # Declare the queue
         channel.queue_declare(queue=os.environ['TASK_QUEUE_NAME'], durable=True)
-
         fpath = os.path.join(DATASET_DIR, datasetname)
-
         for d in os.listdir(fpath):
             body = {
                 'name': d,
@@ -303,7 +262,6 @@ class UploadService:
 
     def RescanLocation(self, path):
         # Take location, and re scan it, location is a folder that has n folders, each of which has some amount of ndb and ndf.
-        # p = os.path.join(path)
         folders = os.listdir(path)
         for folder in folders:
             p = os.path.join(path, folder)
@@ -316,19 +274,6 @@ class UploadService:
             regx = re.compile(r"\d{2}\d{2}-\d{2}")
             # if not regx.fullmatch()
         pass
-
-    # def RescanLocationsForUpload(self, uploadId):
-    #     upload = self.UploadRepository.GetUploadById(uploadId)
-    #     if not upload:
-    #         raise ValueError(f"No upload found with Id {uploadId}")
-    #     #find location of nights for centre.
-    #     location = os.path.join(self.individualNightWaitingRoom, upload.Centre.FolderLocation)
-    #     if not os.path.exists(location):
-    #         print("No location exists.")
-    #         return []
-    #     esrMatch = list(filter(lambda x: os.path.basename(x)[:len(upload.ESR)] == upload.ESR, os.listdir(location)))
-    #     jobs = self.AnalyticsService.GetJobsInQueue()
-    #     return [{'ESR': x, 'isValid': self.verifyIsRecording(os.path.join(location, x) ), 'meta': self.AnalyticsService.CheckJobStatusForUploadedRecording(x, jobs) } for x in esrMatch] 
 
     def RescanLocations(self):
         for centre in os.listdir(self.individualNightWaitingRoom):
@@ -352,4 +297,12 @@ class UploadService:
         except requests.exceptions.RequestException as e:
             print('Error: {0}'.format(str(e)))
             return []
-            # text:'{"error":"not_authorised","reason":"Not management user"}'
+
+    def GetRecordingIdentifierForUpload(self, upload:CentreUpload):
+        upload.Centre = self.AuthenticationRepository.GetCentreById(upload.CentreId)
+        return f"{upload.Centre.Prefix}{str(upload.Centre.MemberNumber).zfill(2)}-{str(upload.RecordingNumber).zfill(3)}"
+
+    def GetRecordingIdentifierForNight(self, night: Night):
+        night.Upload = self.GetUploadById(night.UploadId)
+        night.Upload.Centre = self.AuthenticationRepository.GetCentreById(night.Upload.CentreId)
+        return f"{night.Upload.Centre.Prefix}{str(night.Upload.Centre.MemberNumber).zfill(2)}-{str(night.Upload.RecordingNumber).zfill(3)}-{str(night.NightNumber).zfill(2)}"

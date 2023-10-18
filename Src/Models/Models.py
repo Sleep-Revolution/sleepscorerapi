@@ -41,7 +41,7 @@ class CentreUpload(Base):
     Centre = relationship("Centre", back_populates="CentreUploads")
     Nights = relationship("Night", back_populates="Upload")
     Logs = relationship("UploadLogDataEntry", back_populates="Upload")
-    ESR = ""#f"{CentreId}{RecordingNumber}"
+    RecordingIdentifier = ""#f"{CentreId}{RecordingNumber}"
 
 
 class Night(Base):
