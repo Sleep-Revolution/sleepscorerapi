@@ -39,6 +39,8 @@ class UploadService:
         
     def GetUploadById(self, id):
         x = self.UploadRepository.GetUploadById(id)
+        for _ in x.Nights:
+            _.CompressedLogs = AnalyticsService.GroupUploadLogs(None, _.Logs)
         return x
 
     def GetAllUploads(self):
