@@ -153,15 +153,15 @@ class UploadService:
         if not db_c:
             raise ValueError(f"Found upload that does not have a valid centre! Centre with id {db_u.CentreId} does not exist")
 
-
         newNight = Night()
         newNight.UploadId = uploadId
         newNight.NightNumber = nightNumber
         db_night = self.UploadRepository.AddNightToUpload(newNight)
+        print("Creating jobbo")
         self.CreateJobForNight(db_night.Id)
         
 
-    async def CreateJobForNight(self, nightId):
+    def CreateJobForNight(self, nightId):
         db_n = self.UploadRepository.GetNightById(nightId)
         db_c = self.AuthenticationRepository.GetCentreById(db_n.Upload.CentreId)
         recordingIdentifier = self.GetRecordingIdentifierForNight(db_n) #db_c.Prefix + str(db_c.MemberNumber).zfill(2) + str(db_u.RecordingNumber).zfill(2)     + str(nightNumber).zfill(2)
