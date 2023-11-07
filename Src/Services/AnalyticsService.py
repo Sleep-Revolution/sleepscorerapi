@@ -137,7 +137,7 @@ class AnalyticsService:
         return grouped_history
 
 
-    def GroupUploadLogs(self, job_history: list[NightLogDataEntry] ):
+    def GroupNightLogs(self, job_history: list[NightLogDataEntry] ):
         grouped_history = {}
         # UploadLogDataEntry.TaskTitle
         for entry in job_history:
