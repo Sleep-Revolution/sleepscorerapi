@@ -200,4 +200,5 @@ async def DeleteUpload(request: Request, uploadId: int):
         return RedirectResponse('/', status_code=302)
         # code will go here.
     uploadService.DeleteUpload(uploadId)
+    # redirect the user back to the uploads page, with a get request.
     return RedirectResponse('/admin/uploads', status_code=302)
