@@ -114,7 +114,7 @@ class AnalyticsService:
     #     return create_status_object(job_exists=False, job_history=cleaned_job_history)
     
     # job_history = a list of UploadLogDataEntry objects
-    def GroupUploadLogs(self, job_history: list[UploadLogDataEntry] ):
+    def GroupUploadLogs(self, job_history):
         grouped_history = {}
         UploadLogDataEntry.TaskTitle
         for entry in job_history:
@@ -135,7 +135,7 @@ class AnalyticsService:
         return grouped_history
 
 
-    def GroupNightLogs(self, job_history: list[NightLogDataEntry] ):
+    def GroupNightLogs(self, job_history ):
         grouped_history = {}
         # UploadLogDataEntry.TaskTitle
         for entry in job_history:
