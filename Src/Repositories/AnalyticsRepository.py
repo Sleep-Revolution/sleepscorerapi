@@ -4,9 +4,6 @@ from sqlalchemy.orm import sessionmaker
 import os
 from Src.Models.Models import NightLogDataEntry, UploadLogDataEntry
 
-import logging
-logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 class AnalyticsRepository:
     def __init__(self, session=None):
