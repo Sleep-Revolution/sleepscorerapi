@@ -46,6 +46,22 @@
 }
 
 
+function sendDeleteRequest(uploadId) {
+    if(confirm("Are you sure you want to delete this upload?")) {
+        fetch(`/admin/delete-upload/${uploadId}`, {
+            method: 'DELETE',
+        }).then(response => {
+            // Handle response here, e.g., redirect or remove the element from the DOM.
+            console.log(response);
+            if(response.ok) {
+                window.location.href = '/uploads'; // Redirect to the uploads list page.
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
 </script>
 
 {% endblock %}
@@ -56,16 +72,11 @@
 <div class="container">
     <div class="d-flex m-3 justify-content-between align-items-center">
         
-        <div class="bg-light p-3 rounded-lg m-3 " >
-            Centre Name: {{upload.Centre.CentreName}}
-        </div>
+        <div class="bg-light p-3 rounded-lg m-3 " >Centre Name: {{upload.Centre.CentreName}}</div>
         <div class="bg-light p-3 rounded-lg m-3">Uploaded on {{upload.Timestamp}}</div>
-
-        
         <div id="foo" class="bg-light p-3 rounded-lg m-3">{{upload.ESR}}</div>
-
         <button onclick="sendPostRequest('{{upload.Id}}')">Create Job For Upload</button>
-
+        <button class="btn btn-danger" onclick="sendDeleteRequest('{{upload.Id}}')">Delete Upload</button>
     </div> 
 
     <div class="bg-info p-3 m-3 d-flex rounded-lg justify-content-between align-content-center">
@@ -89,7 +100,7 @@
                     <th>Location</th>
                     <th>Recording Quality</th>
                     <th>Validation</th>
-                    <th>ESR</th>
+                    <th>ESR (Recording Identifier)</th>
                     <th>Job Status</th>
                 </tr>
             </thead>
@@ -99,36 +110,18 @@
                     <td>{{ upload.Centre.FolderLocation }}/{{ night.RecordingIdentifier }} </td>
                     <!-- Recording Quality -->
                     <td>
-                        <!-- <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="{{centre.FolderLocation}}/{{night.ESR}}" id="inlineRadio1-{{night.ESR}}" value="good">
-                            <label class="form-check-label" for="inlineRadio1-{{night.ESR}}">Ok</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="{{centre.FolderLocation}}/{{night.ESR}}" id="inlineRadio2-{{night.ESR}}" value="bad">
-                            <label class="form-check-label" for="inlineRadio2-{{night.ESR}}">Not Ok</label>
-                        </div>
-                        <div class="input-group mt-2">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">Notes</span>
-                            </div>
-                            <input type="text" class="form-control" name="metadata/{{night.ESR}}" id="metadata-{{night.ESR}}" placeholder="Metadata for {{night.ESR}}">
-                        </div> -->
+                        Recording Quality is not being checked at this time.
                     </td>
-
                     <!-- Validation -->
                     <td>
                         No validation is being performed for recordings at this time.
                     </td>
-
                     <!-- ESR -->
                     <td>{{ night.RecordingIdentifier }}</td>
-
                     <!-- Job Status -->
                     <!-- Job Status and Metadata -->
                     <td>
-
                         {{night.CompressedLogs}}
-
                         <button  class="btn btn-secondary" onclick="sendJobCreationRequest(event, {{ night.Id }})">Create Job</button>
                     </td>
 

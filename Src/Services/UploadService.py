@@ -308,3 +308,27 @@ class UploadService:
         night.Upload = self.GetUploadById(night.UploadId)
         night.Upload.Centre = self.AuthenticationRepository.GetCentreById(night.Upload.CentreId)
         return f"{night.Upload.Centre.Prefix}{str(night.Upload.Centre.MemberNumber).zfill(2)}-{str(night.Upload.RecordingNumber).zfill(3)}-{str(night.NightNumber).zfill(2)}"
+
+
+    def DeleteUpload(self, uploadId):
+        # Get the upload. 
+        upload = self.UploadRepository.GetUploadById(uploadId)
+        if upload is None:
+            raise ValueError(f"Upload with id {uploadId} does not exist")
+        self.AnalyticsService.DeleteAllLogsForUpload(uploadId)
+        # for each night, delete the night
+        for night in upload.Nights:
+            self.DeleteNight(night.Id)
+        # then delete the upload
+        self.UploadRepository.DeleteUpload(uploadId)
+
+    def DeleteNight(self, nightId):
+        # get the night or fail
+        night = self.UploadRepository.GetNightById(nightId)
+        if night is None:
+            raise ValueError(f"Night with id {nightId} does not exist")
+        # delete all logs for night
+        self.AnalyticsService.DeleteAllLogsForNight(nightId)
+        # delete the night
+        self.UploadRepository.DeleteNight(nightId)
+        

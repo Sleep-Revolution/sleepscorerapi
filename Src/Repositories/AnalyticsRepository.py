@@ -46,5 +46,14 @@ class AnalyticsRepository:
             session.commit()
             session.refresh(log)
             return log
-    
+        
+    def DeleteNightLog(self, log: NightLogDataEntry):
+        with self.Session() as session:
+            session.query(NightLogDataEntry).filter(NightLogDataEntry.Id == log.Id).delete()
+            session.commit()
+
+    def DeleteUploadLog(self, log: UploadLogDataEntry):
+        with self.Session() as session:
+            session.query(UploadLogDataEntry).filter(UploadLogDataEntry.Id == log.Id).delete()
+            session.commit()
     

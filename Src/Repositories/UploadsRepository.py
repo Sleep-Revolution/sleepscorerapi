@@ -95,3 +95,15 @@ class UploadRepository:
                 night.Upload
                 night.Upload.Centre
             return nights
+
+    def DeleteNight(self, nightId):
+        with self.Session() as session:
+            night = session.query(Night).filter(Night.Id == nightId).one()
+            session.delete(night)
+            session.commit()
+    
+    def DeleteUpload(self, uploadId):
+        with self.Session() as session:
+            upload = session.query(CentreUpload).filter(CentreUpload.Id == uploadId).one()
+            session.delete(upload)
+            session.commit()

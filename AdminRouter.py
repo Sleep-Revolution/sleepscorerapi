@@ -191,3 +191,13 @@ async def AddAccount(request: Request, centreId: int,
     authenticationService.UpdateCentre(centreId, CentreName, Prefix, MemberNumber, ResponsibleEmail, Description)
     return RedirectResponse('/admin/accounts', status_code=302)
 
+@AdminRouter.delete("/delete-upload/{uploadId}", response_class=RedirectResponse)
+async def DeleteUpload(request: Request, uploadId: int):
+    if not request.state.centre:
+        print("redirecting due to no creds")
+        return RedirectResponse('/login', status_code=302)
+    if not request.state.centre.IsAdministrator:
+        return RedirectResponse('/', status_code=302)
+        # code will go here.
+    uploadService.DeleteUpload(uploadId)
+    return RedirectResponse('/admin/uploads', status_code=302)
