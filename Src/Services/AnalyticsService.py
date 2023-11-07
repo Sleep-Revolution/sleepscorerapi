@@ -51,14 +51,6 @@ class AnalyticsService:
 
         messages = response.json()
 
-        # payload = {
-        #         'name': f"{ESR}.zip",
-        #         'path': db_c.FolderLocation,
-        #         'dataset': False,
-        #         'centreId': db_c.Id,
-        #         'uploadId': upload.Id
-        #     }
-
         jobs = []
         for msg in messages:
             payload = msg.get("payload")
@@ -90,32 +82,7 @@ class AnalyticsService:
         return jobs
 
 
-    # def CheckJobStatusForUploadedRecording(self, ESR):
-    #     def create_status_object(is_error=False, job_exists=False, job_history=[]):
-    #         return {
-    #             "is_error": is_error,
-    #             "job_exists": job_exists,
-    #             "job_history": job_history
-    #         }
 
-    #     is_in_queue = any(job.get("name") == recordingName and job.get("path") == f"DATASETS/{datasetName}" for job in jobs)
-        
-    #     job_history = self.GetHistory(recordingName, datasetName)
-        
-    #     cleaned_job_history = []
-    #     for entry in job_history:
-    #         clean_dict = {k: v for k, v in entry.__dict__.items() if not k.startswith('_')}
-    #         cleaned_job_history.append(clean_dict)
-
-    #     if is_in_queue:
-    #         return create_status_object(job_exists=True, job_history=cleaned_job_history)
-        
-    #     if not cleaned_job_history:
-    #         return create_status_object(is_error=True)
-        
-    #     return create_status_object(job_exists=False, job_history=cleaned_job_history)
-    
-    # job_history = a list of UploadLogDataEntry objects
     def GroupUploadLogs(self, job_history):
 
         grouped_history = {}
@@ -126,8 +93,6 @@ class AnalyticsService:
             task_title = entry.TaskTitle
             message = entry.Message
 
-            # Always store/overwrite the step with the latest message
-            # This ensures that only the final message for each step is recorded
             grouped_history[step] = {
                 'TaskTitle': task_title,
                 'Message': 'Fail' if progress == -1 else ('Success' if message is None else message),  # Error message if failed
@@ -136,6 +101,21 @@ class AnalyticsService:
             
         
         return grouped_history
+
+    def DeleteAllLogsForNight(self, nightId):
+        # make sure that night exists
+        logs = self.AnalyticsRepository.GetAllLogsForNight(nightId)
+        if logs is None:
+            return
+        for log in logs:
+            self.AnalyticsRepository.DeleteNightLog(log)
+
+    def DeleteAllLogsForUpload(self, uploadId):
+        logs = self.AnalyticsRepository.GetAllLogsForUpload(uploadId)
+        if logs is None:
+            return
+        for log in logs:
+            self.AnalyticsRepository.DeleteUploadLog(log)
 
 
     def GroupNightLogs(self, job_history ):
@@ -157,32 +137,6 @@ class AnalyticsService:
             
         
         return grouped_history
-
-
-    # def CheckJobStatusForRecordingInDataset(self, datasetName, recordingName, jobs):
-    #     def create_status_object(is_error=False, job_exists=False, job_history=[]):
-    #         return {
-    #             "is_error": is_error,
-    #             "job_exists": job_exists,
-    #             "job_history": job_history
-    #         }
-
-    #     is_in_queue = any(job.get("name") == recordingName and job.get("path") == f"DATASETS/{datasetName}" for job in jobs)
-        
-    #     job_history = self.AnalyticsRepository.GetAllLogsForUpload(recordingName, datasetName)
-        
-    #     cleaned_job_history = []
-    #     for entry in job_history:
-    #         clean_dict = {k: v for k, v in entry.__dict__.items() if not k.startswith('_')}
-    #         cleaned_job_history.append(clean_dict)
-
-    #     if is_in_queue:
-    #         return create_status_object(job_exists=True, job_history=cleaned_job_history)
-
-    #     if not cleaned_job_history:
-    #         return create_status_object(is_error=True)
-        
-    #     return create_status_object(job_exists=False, job_history=cleaned_job_history)
 
 
     def CheckJobStatusForUploadedRecording(self, uploadId :int, RecordingIdentifier:str, jobs):
@@ -211,37 +165,3 @@ class AnalyticsService:
         cleaned_job_history = self.GroupUploadLogs(cleaned_job_history)
         return create_status_object(job_exists=False, job_history=cleaned_job_history)
 
-
-    # def GetHistoryForRecordingInDataset(self, recordingName, datasetName):
-    #     pass
-        # return self.AnalyticsRepository.GetAllLogsForFile(recordingName, datasetName)
-
-
-    # def GetHistoryForUploadedRecording(self, uploadId):
-    #     pass
-        # return self.AnalyticsRepository.GetAllLogsForUploadedRecording(ESR)
-
-
-    # def GetLastJobStatus(self, recordingName, datasetName):
-    #     raise Exception("I hate myself.")
-    #     status_obj = {
-    #         "message": "wat",
-    #         "is_error": False,
-    #         "additional_info": None
-    #     }
-    #     log = self.AnalyticsRepository.GetLastLogForFile(recordingName, datasetName)
-    #     if log is None:
-    #         status_obj["message"] = None
-    #         return status_obj   
-    #     if log.Progress == 2:
-    #         status_obj["message"] = "Job finished successfully"
-    #     elif log.Progress == -1:
-    #         status_obj["message"] = f"Job failed in task '{log.TaskTitle}' with the message '{log.Message}'"
-    #         status_obj["is_error"] = True
-    #     elif log.Progress == 0:
-    #         status_obj["message"] = f"Job started task '{log.TaskTitle}'"
-    #     elif log.Progress == 1:
-    #         status_obj["message"] = f"Job finished task '{log.TaskTitle}'"
-    #     return status_obj
-
-    
