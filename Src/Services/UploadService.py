@@ -1,4 +1,5 @@
 import io
+import shutil
 from sqlalchemy.inspection import inspect
 import re
 from urllib.request import HTTPBasicAuthHandler
@@ -308,3 +309,41 @@ class UploadService:
         night.Upload = self.GetUploadById(night.UploadId)
         night.Upload.Centre = self.AuthenticationRepository.GetCentreById(night.Upload.CentreId)
         return f"{night.Upload.Centre.Prefix}{str(night.Upload.Centre.MemberNumber).zfill(2)}-{str(night.Upload.RecordingNumber).zfill(3)}-{str(night.NightNumber).zfill(2)}"
+
+
+    def DeleteUpload(self, uploadId):
+        # Get the upload. 
+        upload = self.UploadRepository.GetUploadById(uploadId)
+        if upload is None:
+            raise ValueError(f"Upload with id {uploadId} does not exist")
+        self.AnalyticsService.DeleteAllLogsForUpload(uploadId)
+        # for each night, delete the night
+        for night in upload.Nights:
+            self.DeleteNight(night.Id)
+        # then delete the upload
+        self.UploadRepository.DeleteUpload(uploadId)
+        # delete the zip file
+        fpath = os.path.join(UPLOAD_DIR,upload.Centre.FolderLocation)
+        zip_file_path = os.path.join(fpath, f"{upload.RecordingIdentifier}.zip") 
+        if os.path.exists(zip_file_path):
+            os.remove(zip_file_path)
+        else:
+            print(f"Could not find {zip_file_path} to delete it.")
+            
+
+    def DeleteNight(self, nightId):
+        # get the night or fail
+        night = self.UploadRepository.GetNightById(nightId)
+        if night is None:
+            raise ValueError(f"Night with id {nightId} does not exist")
+        # delete all logs for night
+        self.AnalyticsService.DeleteAllLogsForNight(nightId)
+        # delete the night
+        self.UploadRepository.DeleteNight(nightId)
+        # delete the folder
+        nightLocation = os.path.join(os.environ['INDIVIDUAL_NIGHT_WAITING_ROOM'], night.Upload.Centre.FolderLocation, self.GetRecordingIdentifierForNight(night))
+        if os.path.exists(nightLocation):
+            # os.rmdir(nightLocation)
+            shutil.rmtree(nightLocation)
+        else:
+            print(f"Could not find {nightLocation} to delete it.")

@@ -145,7 +145,7 @@ async def CreateJobForUpload(request:Request, uploadId: int):
 
 @app.post('/create-new-job-for-night/{nightId}', response_class=JSONResponse)
 async def CreateJobForNight(request:Request, nightId: int):
-    await uploadService.CreateJobForNight(nightId)
+    uploadService.CreateJobForNight(nightId)
     return {"success": True}
 
 @app.get('/uploads', response_class=JSONResponse)
