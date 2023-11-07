@@ -137,6 +137,26 @@ class AnalyticsService:
         return grouped_history
 
 
+    def GroupUploadLogs(self, job_history: list[NightLogDataEntry] ):
+        grouped_history = {}
+        # UploadLogDataEntry.TaskTitle
+        for entry in job_history:
+            step = entry.StepNumber
+            progress = entry.Progress
+            task_title = entry.TaskTitle
+            message = entry.Message
+
+            # Always store/overwrite the step with the latest message
+            # This ensures that only the final message for each step is recorded
+            grouped_history[step] = {
+                'TaskTitle': task_title,
+                'Message': 'Fail' if progress == -1 else ('Success' if message is None else message),  # Error message if failed
+                'Progress': progress
+            }
+            
+        
+        return grouped_history
+
 
     # def CheckJobStatusForRecordingInDataset(self, datasetName, recordingName, jobs):
     #     def create_status_object(is_error=False, job_exists=False, job_history=[]):

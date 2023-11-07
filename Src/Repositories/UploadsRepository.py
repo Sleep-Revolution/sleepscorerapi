@@ -82,6 +82,7 @@ class UploadRepository:
             cu.Centre
             cu.Logs
             for night in cu.Nights:
+                night.Logs
                 night.RecordingIdentifier = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}-{str(cu.RecordingNumber).zfill(3)}-{str(night.NightNumber).zfill(2)}'
             cu.RecordingIdentifier = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}-{str(cu.RecordingNumber).zfill(3)}'
             return cu
