@@ -102,7 +102,8 @@ def detag(tag):
 
 @app.post('/uploadfile', response_class=HTMLResponse)
 async def create_upload_file(request: Request, file: UploadFile = File(...), 
-        recordingNumber: int = Form(...)
+        recordingNumber: int = Form(...),
+        isFollowup: bool = Form(...)
     ):
     # centre = authenticationService.GetCentreById(request)
     centre = request.state.centre
@@ -114,7 +115,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
         print("Got invalid recording.")
         raise ValueError("Recording number must be provided.")
 
-    print(recordingNumber, centre.Id, request.state.xforwarded)
+    print(recordingNumber, centre.Id, request.state.xforwarded, isFollowup)
 
     allowedFileTypes = ["application/zip", "application/x-zip-compressed"]
     if file.content_type not in allowedFileTypes:
@@ -125,7 +126,7 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
     else:
         print(f"->>>> Creating upload with {file.filename}")
         # The business logic should be implemented in the service class.
-        await uploadService.CreateUpload(centre.Id, file, recordingNumber)
+        await uploadService.CreateUpload(centre.Id, file, recordingNumber, isFollowup)
 
         dbi = tagize(True, "")
         return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
@@ -146,6 +147,13 @@ async def CreateJobForUpload(request:Request, uploadId: int):
 @app.post('/create-new-job-for-night/{nightId}', response_class=JSONResponse)
 async def CreateJobForNight(request:Request, nightId: int):
     uploadService.CreateJobForNight(nightId)
+    return {"success": True}
+
+@app.delete('/recording/{recordingId}', response_class=JSONResponse)
+async def DeleteRecording(request:Request, recordingId: int):
+    if not request.state.superAdmin:
+        return {"success": False, "reason": "Not super admin"}
+    uploadService.DeleteRecording(recordingId)
     return {"success": True}
 
 @app.get('/uploads', response_class=JSONResponse)

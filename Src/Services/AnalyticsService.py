@@ -9,6 +9,12 @@ from requests.auth import HTTPBasicAuth
 import os 
 from typing import List
 
+class JobLogEntry():
+    TaskTitle:str
+    TaskDuration: float
+    TaskNumber: int
+    Success:bool 
+
 class AnalyticsService:
     def __init__(self, analyticsRepo=None):
         if analyticsRepo:
@@ -83,24 +89,7 @@ class AnalyticsService:
 
 
 
-    def GroupUploadLogs(self, job_history):
-
-        grouped_history = {}
-        UploadLogDataEntry.TaskTitle
-        for entry in job_history:
-            step = entry.StepNumber
-            progress = entry.Progress
-            task_title = entry.TaskTitle
-            message = entry.Message
-
-            grouped_history[step] = {
-                'TaskTitle': task_title,
-                'Message': 'Fail' if progress == -1 else ('Success' if message is None else message),  # Error message if failed
-                'Progress': progress
-            }
-            
-        
-        return grouped_history
+    
 
     def DeleteAllLogsForNight(self, nightId):
         # make sure that night exists
@@ -117,7 +106,36 @@ class AnalyticsService:
         for log in logs:
             self.AnalyticsRepository.DeleteUploadLog(log)
 
+    def GroupUploadLogs(self, job_history):
+        grouped_history = {}
+        # UploadLogDataEntry.TaskTitle
+        for entry in job_history:
+            step = entry.StepNumber
+            progress = entry.Progress
+            task_title = entry.TaskTitle
+            message = entry.Message
+            grouped_history[step] = {
+                'TaskTitle': task_title,
+                'Message': 'Fail' if progress == -1 else ('Success' if message is None else message),  # Error message if failed
+                'Progress': progress
+            }
+        return grouped_history
 
+    # todo fix this, but idk how lol lmao.....
+    # def NewGroup(self, job_history):
+    #     first_of_type = job_history[0]
+    #     last_of_type = null
+    #     jobs = []
+    #     for job in job_history[1:]:
+    #         if job.task_title == first_of_type.TaskTitle:
+    #             last_of_type = job
+    #             continue
+    #         else:
+    #             # this means that first and last of type should be collated. 
+    #             n = JobLogEntry()
+    #             n.Success = last_of_type.progress != -1
+    #             n.TaskDuration = 
+            
     def GroupNightLogs(self, job_history ):
         grouped_history = {}
         # UploadLogDataEntry.TaskTitle
@@ -126,7 +144,6 @@ class AnalyticsService:
             progress = entry.Progress
             task_title = entry.TaskTitle
             message = entry.Message
-
             # Always store/overwrite the step with the latest message
             # This ensures that only the final message for each step is recorded
             grouped_history[step] = {
@@ -134,10 +151,7 @@ class AnalyticsService:
                 'Message': 'Fail' if progress == -1 else ('Success' if message is None else message),  # Error message if failed
                 'Progress': progress
             }
-            
-        
         return grouped_history
-
 
     def CheckJobStatusForUploadedRecording(self, uploadId :int, RecordingIdentifier:str, jobs):
         def create_status_object(is_error=False, job_exists=False, job_history=[]):
@@ -146,22 +160,16 @@ class AnalyticsService:
                 "job_exists": job_exists,
                 "job_history": job_history
             }
-
         is_in_queue = any(job.get("name") == RecordingIdentifier for job in jobs)
-        
         job_history = self.AnalyticsRepository.GetAllLogsForNight(uploadId)
-        
         cleaned_job_history = []
         for entry in job_history:
             clean_dict = {k: v for k, v in entry.__dict__.items() if not k.startswith('_')}
             cleaned_job_history.append(clean_dict)
-
         if is_in_queue:
             return create_status_object(job_exists=True, job_history=cleaned_job_history)
-        
         if not cleaned_job_history:
             return create_status_object(is_error=True)
-        
         cleaned_job_history = self.GroupUploadLogs(cleaned_job_history)
         return create_status_object(job_exists=False, job_history=cleaned_job_history)
 

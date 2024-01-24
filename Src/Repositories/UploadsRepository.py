@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.orm import sessionmaker
 import os
+from Src.Infrastructure.Utils import GetRecordingIdentifierForNight, GetRecordingIdentifierForUpload
 from Src.Models.Models import CentreUpload, Centre, Night
 
 class UploadRepository:
@@ -83,8 +84,8 @@ class UploadRepository:
             cu.Logs
             for night in cu.Nights:
                 night.Logs
-                night.RecordingIdentifier = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}-{str(cu.RecordingNumber).zfill(3)}-{str(night.NightNumber).zfill(2)}'
-            cu.RecordingIdentifier = f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}-{str(cu.RecordingNumber).zfill(3)}'
+                night.RecordingIdentifier = GetRecordingIdentifierForNight(night, cu.Centre, cu)
+            cu.RecordingIdentifier = GetRecordingIdentifierForUpload(cu, cu.Centre) #f'{cu.Centre.Prefix}{str(cu.Centre.MemberNumber).zfill(2)}-{str(cu.RecordingNumber).zfill(3)}'
             return cu
     
     def GetNightsForUpload(self, uploadId):
@@ -107,3 +108,12 @@ class UploadRepository:
             upload = session.query(CentreUpload).filter(CentreUpload.Id == uploadId).one()
             session.delete(upload)
             session.commit()
+    # todo: Fix...
+    def GetLastNRecordings(self, n):
+        with self.Session() as session:
+            uploads = session.query(CentreUpload).order_by(CentreUpload.Timestamp).Take(n)
+            for upload in uploads:
+                upload.Centre
+                upload.Nights
+                upload.Logs
+            return uploads

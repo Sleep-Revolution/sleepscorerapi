@@ -3,6 +3,20 @@
 {% extends "base.html" %}
 
 {% block page_content %}
+
+<script>
+    const existingRecordings = [
+      {% for upload in uploads %}
+        {
+          recordingNumber: {{ upload.RecordingNumber }},
+          isReturning: {{ 'true' if upload.IsFollowup else 'false' }}
+        },
+      {% endfor %}
+    ];
+</script>
+  
+
+
 <div class="container col-xxl-8 px-1 py-1">
   <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
     <div class="col-10 col-sm-8 col-md-6">
@@ -20,31 +34,37 @@
 
 
 <div class="container mt-5">
-  <h3>Upload a Zip File</h3>
+    <h3>Upload a Zip File</h3>
 
-  <form id="upload-form" enctype="multipart/form-data">
+    <form id="upload-form" enctype="multipart/form-data">
     
 
     <div class="row"> <!-- Assuming you want a row here as the previous code seems to be part of one -->
-      <div class="col-md-6">
-          <label for="recordingNumber" class="form-label">Participant Number</label>
-          <input class="form-control" type="number" id="recordingNumber" name="file" oninput="updateRecordingDetails()" />
-      </div>
-      <div class="col-md-6 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1em;">
-          <label for="recordingDetails" class="form-label">Recording Identifier</label>
-          <span id="recordingDetails" style="font-size: 1.5em;">
-              {{centre.Prefix}}{{centre.MemberNumber}}---
-          </span>
-      </div>
-  </div>
+        <div class="col-md-6">
+            <label for="recordingNumber" class="form-label">Participant Number</label>
+            <input class="form-control" type="number" id="recordingNumber" name="file" oninput="updateRecordingDetails()" />
+        </div>
+        <div class="col-md-6 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1em;">
+            <label for="recordingDetails" class="form-label">Recording Identifier</label>
+            <span id="recordingDetails" style="font-size: 1.5em;">
+                {{centre.Prefix}}{{centre.MemberNumber}}---
+            </span>
+        </div>
+    </div>
     
+    <div class="bg-light p-3 rounded-lg mt-4">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="returningParticipant" onchange="updateRecordingDetails()">
+            <label class="form-check-label" for="returningParticipant">
+                This is a returning participant
+            </label>
+        </div>
+    </div>
 
     <div class="bg-light p-3 rounded-lg mt-4">
       <label for="file" class="form-label">File Input</label>
       <input class="form-control" type="file" id="file" name="file" required>
     </div>
-
-
 
     
     <div class="bg-light rounded-lg p-3 mt-4">
@@ -80,47 +100,45 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js" integrity="sha512-wT7uPE7tOP6w4o28u1DN775jYjHQApdBnib5Pho4RB0Pgd9y7eSkAV1BTqQydupYDB9GBhTcQQzyNMPMV3cAew==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-  $(document).ready(function () {
-    const form = $("#upload-form")
-    const fileInput = document.querySelector('input[type="file"]');
-    
-    $('#upload-form').on('submit', function (e) {
-      e.preventDefault();
-      
-      // return;
-      const file = fileInput.files[0];
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('recordingNumber', $("#recordingNumber").val());
+    $(document).ready(function () {
+        const form = $("#upload-form")
+        const fileInput = document.querySelector('input[type="file"]');
 
+        $('#upload-form').on('submit', function (e) {
+            e.preventDefault();
+            
+            // return;
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('recordingNumber', $("#recordingNumber").val());
+            
+            formData.append('isFollowup', $("#returningParticipant").is(":checked"));
+            console.log(formData);
 
-      console.log(formData);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/uploadfile');
+            xhr.setRequestHeader('Authorization', `Bearer ${Cookies.get('session_id')}`);
 
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/uploadfile');
-      xhr.setRequestHeader('Authorization', `Bearer ${Cookies.get('session_id')}`);
+            xhr.upload.addEventListener('progress', function (event) {
+            if (event.lengthComputable) {
+                const progress = Math.round((event.loaded / event.total) * 100);
+                // console.log('Upload Progress:', progress + '%');
+                const progressBar = document.getElementById('uploadprogress');
+                document.getElementById("progressdiv").style.display='block'
+                progressBar.style.width = progress + '%';
+                progressBar.innerText = progress + '%';
+                progressBar.setAttribute('aria-valuenow', `${progress}%`);
+                // Update your progress UI here if needed
+            }
+        });
 
-      xhr.upload.addEventListener('progress', function (event) {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          // console.log('Upload Progress:', progress + '%');
-          const progressBar = document.getElementById('uploadprogress');
-          document.getElementById("progressdiv").style.display='block'
-          progressBar.style.width = progress + '%';
-          progressBar.innerText = progress + '%';
-          progressBar.setAttribute('aria-valuenow', `${progress}%`);
-          // Update your progress UI here if needed
-        }
-      });
-
-      xhr.onload = function () {
-        window.location = xhr.responseURL
-      };
-
-      xhr.send(formData);
-      
+            xhr.onload = function () {
+                window.location = xhr.responseURL
+            };
+            xhr.send(formData);
+        });
     });
-  });
 
   let ellipsisCount = 0;
   let ellipsisInterval;
@@ -138,15 +156,18 @@
   updateEllipsis()
   ellipsisInterval = setInterval(updateEllipsis, 750);
 
-  const existingRecordingNumbers = [
-    {% for upload in uploads %}
-      {{ upload.RecordingNumber }},
-    {% endfor %}
-  ];   
+//   const existingRecordingNumbers = [
+//     {% for upload in uploads %}
+//       {{ upload.RecordingNumber }},
+//     {% endfor %}
+//   ];   
 
-  function recordingNumberExists(recordingNumber) {
-  return existingRecordingNumbers.includes(recordingNumber);
-}
+    function recordingNumberExists(recordingNumber) {
+        return existingRecordings.some(recording => recording.recordingNumber === recordingNumber);
+    }
+    function returningVisitAlreadyExistsForRecordingNumber(recordingNumber) {
+        return existingRecordings.some(recording => recording.recordingNumber === recordingNumber && recording.isReturning);
+    }
 
     function updateRecordingDetails() {
         let centreMemberNumber = "{{centre.MemberNumber}}"; // Get the centre ID value from your server-side code
@@ -158,47 +179,84 @@
         let recordingNumber = recordingNumberInput.value; // Get the recording number value from the input element
         
         if (!recordingNumber) {
-          ellipsisCount = 0; // Reset ellipsisCount if recording number is not set
-          clearInterval(ellipsisInterval); // Clear interval if recording number is not set
-          ellipsisInterval = setInterval(updateEllipsis, 750); // Restart ellipsis animation
+            ellipsisCount = 0; // Reset ellipsisCount if recording number is not set
+            clearInterval(ellipsisInterval); // Clear interval if recording number is not set
+            ellipsisInterval = setInterval(updateEllipsis, 750); // Restart ellipsis animation
         } else {
-          clearInterval(ellipsisInterval); // Clear interval if recording number is set
-          const recordingDetails = document.getElementById("recordingDetails"); // Get the recordingDetails div element
-          recordingNumber = String(recordingNumber).padStart(3,'0')
-          recordingDetails.innerHTML = `{{centre.Prefix}}${centreMemberNumber}-${recordingNumber}`; // Update the content of the recordingDetails div with the concatenated values
+            clearInterval(ellipsisInterval); // Clear interval if recording number is set
+            const recordingDetails = document.getElementById("recordingDetails"); // Get the recordingDetails div element
+            recordingNumber = String(recordingNumber).padStart(3,'0')
+            // returningVisit Flag is "-R" if the recording number is already in the existing recordings list and is a returning visit
+            let followUpVisitFlag = $("#returningParticipant").is(":checked") ? "-F" : "";
+            recordingDetails.innerHTML = `{{centre.Prefix}}${centreMemberNumber}-${recordingNumber}${followUpVisitFlag}`; // Update the content of the recordingDetails div with the concatenated values
         }
 
         updateSubmitButtonStatus(); 
     }
 
-    function updateSubmitButtonStatus() {
-      const submitButton = document.getElementById("upload-button");
-      const form = document.getElementById("upload-form");
+    // function updateSubmitButtonStatus() {
+    //     const submitButton = document.getElementById("upload-button");
+    //     const form = document.getElementById("upload-form");
 
-      // Check if all required fields in the form are filled
-      const isFormValid = form.checkValidity();
-      const checkbox = document.getElementById('checkbox');
-
-      const recordingNumberInput = document.getElementById("recordingNumber"); // Get the recording number input element
-      const recordingNumber = recordingNumberInput.value; // Get the recording number value from the input element
+    //     // Check if all required fields in the form are filled
+    //     const isFormValid = form.checkValidity();
+    //     const checkbox = document.getElementById('checkbox');
+    //     const IsReturningVisit = $("#returningParticipant").is(":checked");
+    //     const recordingNumberInput = document.getElementById("recordingNumber"); // Get the recording number input element
+    //     const recordingNumber = recordingNumberInput.value; // Get the recording number value from the input element
       
-      // If the recording number is in the existing recordings list, the form is invalid
-      if (checkbox.checked) {
-        if (recordingNumberExists(parseInt(recordingNumber))) {
+    //     // If the recording number is in the existing recordings list, the form is invalid
+    //     if (checkbox.checked) {
+    //     if (recordingNumberExists(parseInt(recordingNumber))) {
+    //         submitButton.setAttribute("disabled", "disabled");
+    //         submitButton.innerHTML = "Duplicate Recording Number";
+    //     } else if (!isFormValid) {
+    //         submitButton.setAttribute("disabled", "disabled");
+    //         submitButton.innerHTML = "Fill All Fields";
+    //     } else {
+    //         submitButton.removeAttribute("disabled");
+    //         submitButton.innerHTML = "<i class='bx bxs-cloud-upload' style='font-size:1.4em;'></i><span id='loadingSpinner' class='spinner-border spinner-border-sm' role='status' aria-hidden='true' style='display:none;'></span> Submit";
+    //     }
+    //     }else{
+    //         submitButton.setAttribute("disabled", "disabled");
+    //         submitButton.innerHTML = "Check the box to confirm there is no personal information in the uploaded file";
+    //     }
+    // }
+
+    function updateSubmitButtonStatus() {
+        const submitButton = document.getElementById("upload-button");
+        const form = document.getElementById("upload-form");
+
+        // Check if all required fields in the form are filled
+        const isFormValid = form.checkValidity();
+        const checkbox = document.getElementById('checkbox');
+        const returningParticipantCheckbox = document.getElementById('returningParticipant');
+
+        const recordingNumberInput = document.getElementById("recordingNumber");
+        const recordingNumber = parseInt(recordingNumberInput.value);
+
+        // Find if recording number exists and their returning status
+        const matchingRecords = existingRecordings.filter(record => record.recordingNumber === recordingNumber);
+        const hasNonReturningRecord = matchingRecords.some(record => !record.isReturning);
+        const hasReturningRecord = matchingRecords.some(record => record.isReturning);
+
+        // Check various conditions for enabling the submit button
+        if (!isFormValid || !checkbox.checked) {
             submitButton.setAttribute("disabled", "disabled");
-            submitButton.innerHTML = "Duplicate Recording Number";
-        } else if (!isFormValid) {
+            submitButton.innerHTML = "Fill All Fields and Confirm No Personal Information";
+        } else if (!returningParticipantCheckbox.checked && hasNonReturningRecord) {
             submitButton.setAttribute("disabled", "disabled");
-            submitButton.innerHTML = "Fill All Fields";
+            submitButton.innerHTML = "Duplicate participant, is this a returning participant?";
+        } else if (returningParticipantCheckbox.checked && (!hasNonReturningRecord || hasReturningRecord)) {
+            submitButton.setAttribute("disabled", "disabled");
+            submitButton.innerHTML = hasReturningRecord ? "Duplicate Returning Participant" : "This participant is not a returning participant";
         } else {
             submitButton.removeAttribute("disabled");
             submitButton.innerHTML = "<i class='bx bxs-cloud-upload' style='font-size:1.4em;'></i><span id='loadingSpinner' class='spinner-border spinner-border-sm' role='status' aria-hidden='true' style='display:none;'></span> Submit";
         }
-      }else{
-            submitButton.setAttribute("disabled", "disabled");
-            submitButton.innerHTML = "Check the box to confirm there is no personal information in the uploaded file";
-      }
     }
+
+
     // Attach the updateSubmitButtonStatus function to input events on required fields
 
     document.getElementById("upload-button").setAttribute("disabled", "disabled");

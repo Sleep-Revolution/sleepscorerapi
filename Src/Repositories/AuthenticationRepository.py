@@ -10,13 +10,10 @@ class AuthenticationRepository:
         if not session:
             # self.engine = create_engine(os.environ['SLEEPSCORER_DB_URL'])
             self.engine = create_engine(
-                os.environ['SLEEPSCORER_DB_URL'],
-                poolclass=QueuePool,
-                pool_size=10,  # Set an appropriate pool size for your application
-                max_overflow=20,# Set the maximum number of connections allowed to overflow
+                os.environ['SLEEPSCORER_DB_URL'], poolclass=QueuePool,
+                pool_size=10, max_overflow=20,
                 pool_recycle=3600
             )
-
             self.Session = sessionmaker(bind=self.engine)
         else:
             self.Session = session
@@ -36,7 +33,6 @@ class AuthenticationRepository:
     def GetCentreByPrefixAndMN(self, prefix, memberNumber):
         with self.Session() as session:
             return session.query(Centre).filter(Centre.Prefix == prefix, Centre.MemberNumber == memberNumber).first()
-
 
     def GetCentreById(self, centreId: int) -> Centre:
         with self.Session() as session:

@@ -35,6 +35,7 @@ class CentreUpload(Base):
     __tablename__ = "CentreUploads"
     Id = Column(Integer, primary_key=True, index=True)
     RecordingNumber = Column(Integer)
+    IsFollowup = Column(Boolean)
     CentreId = Column(Integer, ForeignKey("Centres.Id"))
     Timestamp = Column(DateTime, default=datetime.datetime.now())
     Location = Column(String, unique=True)
@@ -48,6 +49,7 @@ class Night(Base):
     __tablename__ = "Nights"
     Id = Column(Integer, primary_key=True, index=True)
     UploadId = Column(Integer, ForeignKey("CentreUploads.Id"))
+    IsFollowup = Column(Boolean)
     NightNumber = Column(Integer)
     Location = Column(String)
     IsFaulty = Column(Boolean)

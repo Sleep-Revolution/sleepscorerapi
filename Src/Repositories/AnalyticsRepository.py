@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 from Src.Models.Models import NightLogDataEntry, UploadLogDataEntry
 
-
+    
 class AnalyticsRepository:
     def __init__(self, session=None):
         if not session:

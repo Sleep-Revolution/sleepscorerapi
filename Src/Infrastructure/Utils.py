@@ -1,5 +1,8 @@
 # utils.py
 
+from Src.Models.Models import Centre, CentreUpload, Night
+
+
 def format_last_logged_in(last_login, request_time):
     if last_login:
         last_login = last_login.replace(tzinfo=request_time.tzinfo)
@@ -29,3 +32,18 @@ def format_last_logged_in(last_login, request_time):
         return formatted_last_login
     else:
         return "Never logged in."
+    
+
+
+def GetRecordingIdentifierForUpload(upload:CentreUpload, centre:Centre):
+    # ar = AuthenticationRepository()
+    upload.Centre = centre
+    returningFlag = "-F" if upload.IsFollowup else ""
+    return f"{upload.Centre.Prefix}{str(upload.Centre.MemberNumber).zfill(2)}-{str(upload.RecordingNumber).zfill(3)}{returningFlag}"
+
+def GetRecordingIdentifierForNight(night: Night, centre:Centre, upload:CentreUpload):
+    # ar = AuthenticationRepository()
+    night.Upload.Centre = centre #upload.Centre #ar.GetCentreById(upload.CentreId)
+    night.Upload = upload#ar.GetUploadById(night.UploadId) #self.GetUploadById(night.UploadId)
+    returingFlag = "-F-" if night.IsFollowup else "-" 
+    return f"{night.Upload.Centre.Prefix}{str(night.Upload.Centre.MemberNumber).zfill(2)}-{str(night.Upload.RecordingNumber).zfill(3)}{returingFlag}{str(night.NightNumber).zfill(2)}"
