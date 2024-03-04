@@ -96,13 +96,18 @@ class UploadService:
         upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
         # Create a job for the upload
         self.createJobForUpload(upload.Id)
-        zabbix_server = '130.208.209.7'
-        # Create metrics
-        metrics = [ZabbixMetric('sleepwell.sleep.ru.is', 'ESADA.upload', CentreName)]
-        # Create a ZabbixSender instance
-        zbx = ZabbixSender(zabbix_server)
-        # Send metrics to zabbix
-        zbx.send(metrics)
+        try:
+
+            zabbix_server = '130.208.209.7'
+            # Create metrics
+            metrics = [ZabbixMetric('sleepwell.sleep.ru.is', 'ESADA.upload', CentreName)]
+            # Create a ZabbixSender instance
+            zbx = ZabbixSender(zabbix_server)
+            # Send metrics to zabbix
+            zbx.send(metrics)
+        except Exception as e:
+            print(f"Failed to send metrics to zabbix: {e}")
+            
         #send_to_zabbix([Metric('sleepwell.sleep.ru.is', 'ESADA.upload',  db_c.CentreName)], zabbix_server, 10051)
 
     def createJobForUpload(self, uploadId: int): 
