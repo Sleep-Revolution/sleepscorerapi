@@ -42,7 +42,7 @@
     <div class="row"> <!-- Assuming you want a row here as the previous code seems to be part of one -->
         <div class="col-md-6">
             <label for="recordingNumber" class="form-label">Participant Number</label>
-            <input class="form-control" type="number" id="recordingNumber" name="file" oninput="updateRecordingDetails()" />
+            <input class="form-control" type="number" min="1" id="recordingNumber" name="file" oninput="updateRecordingDetails()" />
         </div>
         <div class="col-md-6 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1em;">
             <label for="recordingDetails" class="form-label">Recording Identifier</label>

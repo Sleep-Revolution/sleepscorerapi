@@ -73,6 +73,10 @@ class UploadService:
             existingUploads = list(filter(lambda x: x.RecordingNumber == recordingNumber and x.IsFollowup, existingUploads))
             if len(existingUploads) > 0:
                 raise Exception(f"Recording Number {recordingNumber} already has a returning visit.")
+
+        if recordingNumber < 1:
+            raise ValueError(f"Recording number must be greater than 0") 
+
         newCentreUpload =  CentreUpload()
         newCentreUpload.CentreId = centreId
         newCentreUpload.IsFollowup = isFollowup
@@ -107,7 +111,7 @@ class UploadService:
             zbx.send(metrics)
         except Exception as e:
             print(f"Failed to send metrics to zabbix: {e}")
-            
+
         #send_to_zabbix([Metric('sleepwell.sleep.ru.is', 'ESADA.upload',  db_c.CentreName)], zabbix_server, 10051)
 
     def createJobForUpload(self, uploadId: int): 
