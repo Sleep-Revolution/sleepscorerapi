@@ -49,8 +49,13 @@ class AnalyticsService:
             "ackmode": "ack_requeue_true",
             "encoding": "auto"
         }
-        response = requests.post(get_messages_url, headers={"content-type": "application/json"},
-                                data=json.dumps(data), auth=HTTPBasicAuth("server", "server"))
+        response = None
+        try:
+            response = requests.post(get_messages_url, headers={"content-type": "application/json"},
+                                data=json.dumps(data), auth=HTTPBasicAuth("server", "server"), timeout=1)
+        except Exception as e:
+            print(e)
+            return []
 
         if response.status_code != 200:
             return []
@@ -73,7 +78,7 @@ class AnalyticsService:
             "encoding": "auto"
         }
         response = requests.post(get_messages_url, headers={"content-type": "application/json"},
-                                data=json.dumps(data), auth=HTTPBasicAuth("server", "server"))
+                                data=json.dumps(data), auth=HTTPBasicAuth("server", "server"), timeout=1)
 
         if response.status_code != 200:
             return []

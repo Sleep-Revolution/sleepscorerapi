@@ -290,7 +290,7 @@ class UploadService:
         api_url = 'http://130.208.209.2:15672/api/queues/%2F/{0}'.format(queue_name)
         auth = ('monitor', 'monitor')  # RabbitMQ default credentials
         try:
-            response = requests.get(api_url, auth=auth)
+            response = requests.get(api_url, auth=auth, timeout=1)
             if response.status_code == 200:
                 queue_info = response.json()
                 return queue_info['consumer_details']
@@ -300,6 +300,9 @@ class UploadService:
         except requests.exceptions.RequestException as e:
             print('Error: {0}'.format(str(e)))
             return []
+
+    def GetLastNUploads(self, n):
+        return self.UploadRepository.GetLastNUploads(n)
 
     def DeleteUpload(self, uploadId):
         # Get the upload. 

@@ -1,10 +1,9 @@
 {% extends "base.html" %}
 
-
 {% block page_content %}
 
-<div class="container">
-  <div class="row mt-5">
+<div class="container mt-5">
+  <div class="row">
     <div class="col-md-5">
       <h3>Welcome to admin {{centre.CentreName}}</h3>
       <p>This is the administration panel for the sleep revolution</p>
@@ -16,18 +15,42 @@
         Active connections to the dev_processing_queue: {{procConsumers}}
       </p>
     </div>
-    <div class="col-md-12">
-      <a class="btn btn-primary m-2" href="/admin/uploads">Check out the uploads</a>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-md-4">
+      <a class="btn btn-primary m-2" href="/admin/uploads">Check out the uploads</a> <br />
+      <a class="btn btn-primary m-2" href="/admin/accounts">Check out the account control system</a> <br />
+      <a class="btn btn-primary m-2" href="/admin/dataset">Upload an entire dataset at once</a> <br />
+      <a class="btn btn-primary m-2" href="/admin/datasets">Look at all the datasets</a> 
     </div>
-    <div class="col-md-12">
-      <a class="btn btn-primary m-2" href="/admin/accounts">Check out the account control system.</a>
+
+    <div class="col-md-6">
+      <h4 class="mb-4">Last 10 Uploads:</h4>
+      <div class="list-group">
+        {% for upload in feed[:10] %}
+          <div class="list-group-item mb-3 p-4 rounded border">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex flex-column">
+                <h5 class="mb-1">
+                  <a href="/admin/uploads/{{ upload.Id }}" class="btn btn-primary btn-sm">
+                    {{ upload.RecordingIdentifier }}
+                  </a>
+                </h5>
+                <p class="mb-1"><strong>Recording Number:</strong> {{ upload.RecordingNumber }}</p>
+                <p class="mb-1"><strong>Follow-up:</strong> {{ "Yes" if upload.IsFollowup else "No" }}</p>
+                <p class="mb-1"><small>Uploaded {{ upload.time_since }} ago</small></p>
+              </div>
+              <span class="text-muted small bg-light py-1 px-2 rounded">{{ upload.Centre.CentreName }}</span>
+            </div>
+            <!-- Add other relevant information here -->
+          </div>
+        {% endfor %}
+      </div>
     </div>
-    <div class="col-md-12">
-      <a class="btn btn-primary m-2" href="/admin/dataset">Upload an entire dataset at once</a>
-    </div>
-    <div class="col-md-12">
-      <a class="btn btn-primary m-2" href="/admin/datasets">Look at all the datasets</a>
-    </div>
+    
+
   </div>
 </div>
+
 {% endblock %}

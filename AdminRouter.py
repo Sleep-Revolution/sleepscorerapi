@@ -1,7 +1,8 @@
 import datetime
+import json
 from fastapi import APIRouter
 from fastapi import FastAPI, UploadFile, File, Request, Depends, HTTPException, Response, Form, Cookie, Query
-
+import humanfriendly
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from Src.Infrastructure.PreprocessRequest import PreprocessRequest
 
@@ -67,9 +68,13 @@ async def AdminStuff(request: Request):
         print("redirecting due to no creds")
         return RedirectResponse('/login')
     if request.state.centre.IsAdministrator:
+        feed = uploadService.GetLastNUploads(10)
+        for upload in feed:
+            time_difference = datetime.datetime.now() - upload.Timestamp
+            upload.time_since = humanfriendly.format_timespan(time_difference)
         preprocConsumers = len(uploadService.get_active_connections("dev_preprocessing_queue"))
         procConsumers = len(uploadService.get_active_connections("dev_task_queue"))
-        return templates.TemplateResponse("Admin/admin.html", {"request": request, "centre": request.state.centre, "preprocConsumers": preprocConsumers, "procConsumers": procConsumers})
+        return templates.TemplateResponse("Admin/admin.html", {"request": request, "centre": request.state.centre, "preprocConsumers": preprocConsumers, "procConsumers": procConsumers, "feed": feed})
 
 @AdminRouter.get("/uploads", response_class=HTMLResponse)
 async def UploadList(request: Request):

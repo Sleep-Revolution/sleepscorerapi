@@ -52,6 +52,16 @@ class UploadRepository:
                 
             return uploads
 
+    def GetLastNUploads(self, n):
+        with self.Session() as session:
+            uploads = session.query(CentreUpload).order_by(CentreUpload.Timestamp.desc()).limit(n).all()
+            for upload in uploads:
+                upload.Centre
+                upload.Nights
+                upload.Logs
+                upload.RecordingIdentifier = GetRecordingIdentifierForUpload(upload, upload.Centre)
+            return uploads
+
     def GetAllCentres(self):
         with self.Session() as session:
             centres = session.query(Centre).all()
