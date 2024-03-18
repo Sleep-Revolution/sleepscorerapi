@@ -14,6 +14,45 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.2/umd/popper.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
+<!-- inline styles -->
+<style>
+
+.logs-progress-container {
+    max-height: 150px; /* Limiting height to prevent excessive expansion */
+    overflow-y: auto; /* Adding scrollbar when content exceeds container height */
+}
+
+.logs-list {
+    list-style-type: none; /* Removing default list styles */
+    padding: 0; /* Removing padding */
+}
+
+.log-item {
+    border-bottom: 1px solid #ddd; /* Adding border between log items */
+    padding: 10px 0; /* Adding vertical padding */
+    display: flex; /* Flex layout to align items */
+    align-items: center; /* Aligning items vertically */
+    justify-content: space-between; /* Justify content to space between */
+}
+
+.log-progress-icon {
+    margin-right: 10px; /* Adding margin between progress icon and timestamp */
+}
+
+.log-timestamp {
+    margin-right: 10px; /* Adding margin between timestamp and task title */
+}
+
+.log-task-title {
+    margin-right: 10px; /* Adding margin between task title and message icon */
+}
+
+.log-message-icon {
+    cursor: pointer; /* Changing cursor to pointer for tooltip */
+    margin-right: 5px; /* Adding margin between message icon and next item */
+}
+
+</style>
 
 <script>
     $(document).ready(function(){
@@ -64,6 +103,12 @@ function sendDeleteRequest(uploadId) {
 
 </script>
 
+<script>
+    $(document).ready(function(){
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+
 {% endblock %}
 
 {% block page_content %}
@@ -83,7 +128,7 @@ function sendDeleteRequest(uploadId) {
       The multi-night recording is in the following folder: {{upload.Location}} in the portal destination folder.
     </div>
     <div class="bg-info p-3 m-3 d-flex rounded-lg justify-content-between align-content-center">
-      The individual night recordings will go into the following location in the individual-night waiting room: {{upload.Location}}xx.
+      The individual night recordings will go into the following location in the individual-night waiting room: {{upload.Location}}-xxx.
     </div>     
     
     {% if upload.Nights|length > 0 %}
@@ -120,10 +165,47 @@ function sendDeleteRequest(uploadId) {
                     <td>{{ night.RecordingIdentifier }}</td>
                     <!-- Job Status -->
                     <!-- Job Status and Metadata -->
-                    <td>
-                        {{night.CompressedLogs}}
+                    <!-- <td>
                         <button  class="btn btn-secondary" onclick="sendJobCreationRequest(event, {{ night.Id }})">Create Job</button>
-                    </td>
+                    </td> -->
+                    
+                    <!-- Job Status -->
+<td>
+    <!-- Displaying logs, task title, timestamp, and progress -->
+    <div class="logs-progress-container">
+        {% if night.Logs %}
+            <ul class="logs-list">
+                {% for log in night.Logs %}
+                    <li class="log-item">
+                        <span class="log-progress-icon">
+                            {% if log.Progress == 0 %}
+                                <i class="fas fa-play-circle text-primary"></i>
+                            {% elif log.Progress == 1 %}
+                                <i class="fas fa-check-circle text-success"></i>
+                            {% elif log.Progress == 2 %}
+                                <i class="fas fa-stop-circle text-info"></i>
+                            {% elif log.Progress == 3 %}
+                                <i class="fas fa-exclamation-circle text-warning"></i>
+                            {% elif log.Progress == -1 %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                            {% endif %}
+                        </span>
+                        <span class="log-timestamp">{{ log.Timestamp }}</span>
+                        <span class="log-task-title">{{ log.TaskTitle }}</span>
+                        {% if log.Message %}
+                            <i class="fas fa-info-circle log-message-icon" data-toggle="tooltip" title="{{ log.Message }}"></i>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="no-logs-msg">No logs available</p>
+        {% endif %}
+    </div>
+    
+    <button class="btn btn-secondary create-job-btn" onclick="sendJobCreationRequest(event, {{ night.Id }})">Create Job</button>
+</td>
+                    
 
 
                 </tr>
@@ -145,9 +227,5 @@ function sendDeleteRequest(uploadId) {
         {% endif %}
       </div>
 </div>
-
-
-
-
 
 {% endblock %}
