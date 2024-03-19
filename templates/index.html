@@ -73,19 +73,19 @@
         <div class="form-check">
           <input class="form-check-input" type="checkbox" id="checkbox" onchange="updateSubmitButtonStatus()">
           <label class="form-check-label" for="checkbox">
-            I certify the file is not containing any personal information as instructed <a href="https://wiki.sleep.ru.is/doku.php?id=esada_instructions:anonymization_instructions" target="_blank" rel="noopener noreferrer">Here</a>
+            I verify that the file does not contain any personal information as instructed <a href="https://wiki.sleep.ru.is/doku.php?id=esada_instructions:anonymization_instructions" target="_blank" rel="noopener noreferrer">Here</a>
           </label>
         </div>
 
+        <div id="progressdiv" style="display:none" class="progress m-3">
+          <div id="uploadprogress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
         <!-- Modify the submit button to be initially disabled -->
         <button id="upload-button" class="btn btn-primary" type="submit" disabled>
           <i class="bx bxs-cloud-upload" style="font-size:1.4em;"></i>
           <span id="loadingSpinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none;"></span>
           Submit
         </button>
-      </div>
-      <div id="progressdiv" style="display:none" class="progress m-3">
-        <div id="uploadprogress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0%</div>
       </div>
     </div>
   </form>
@@ -106,7 +106,8 @@
 
         $('#upload-form').on('submit', function (e) {
             e.preventDefault();
-            
+            uploadButton = document.getElementById("upload-button");
+            uploadButton.setAttribute("disabled", "disabled"); // Disable the submit button
             // return;
             const file = fileInput.files[0];
             const formData = new FormData();
@@ -193,35 +194,6 @@
 
         updateSubmitButtonStatus(); 
     }
-
-    // function updateSubmitButtonStatus() {
-    //     const submitButton = document.getElementById("upload-button");
-    //     const form = document.getElementById("upload-form");
-
-    //     // Check if all required fields in the form are filled
-    //     const isFormValid = form.checkValidity();
-    //     const checkbox = document.getElementById('checkbox');
-    //     const IsReturningVisit = $("#returningParticipant").is(":checked");
-    //     const recordingNumberInput = document.getElementById("recordingNumber"); // Get the recording number input element
-    //     const recordingNumber = recordingNumberInput.value; // Get the recording number value from the input element
-      
-    //     // If the recording number is in the existing recordings list, the form is invalid
-    //     if (checkbox.checked) {
-    //     if (recordingNumberExists(parseInt(recordingNumber))) {
-    //         submitButton.setAttribute("disabled", "disabled");
-    //         submitButton.innerHTML = "Duplicate Recording Number";
-    //     } else if (!isFormValid) {
-    //         submitButton.setAttribute("disabled", "disabled");
-    //         submitButton.innerHTML = "Fill All Fields";
-    //     } else {
-    //         submitButton.removeAttribute("disabled");
-    //         submitButton.innerHTML = "<i class='bx bxs-cloud-upload' style='font-size:1.4em;'></i><span id='loadingSpinner' class='spinner-border spinner-border-sm' role='status' aria-hidden='true' style='display:none;'></span> Submit";
-    //     }
-    //     }else{
-    //         submitButton.setAttribute("disabled", "disabled");
-    //         submitButton.innerHTML = "Check the box to confirm there is no personal information in the uploaded file";
-    //     }
-    // }
 
     function updateSubmitButtonStatus() {
         const submitButton = document.getElementById("upload-button");

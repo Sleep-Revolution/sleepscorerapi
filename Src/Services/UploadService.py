@@ -151,7 +151,7 @@ class UploadService:
             # # Close the connection
             connection.close()
         except Exception as e:
-            print(f"Failed to create job for upload {uploadId}: {e}")
+            print(f"Failed to create job for upload {uploadId}: {str(e)}")
             raise e
 
 
