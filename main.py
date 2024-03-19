@@ -126,7 +126,12 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
     else:
         print(f"->>>> Creating upload with {file.filename}")
         # The business logic should be implemented in the service class.
-        await uploadService.CreateUpload(centre.Id, file, recordingNumber, isFollowup)
+        try:
+            await uploadService.CreateUpload(centre.Id, file, recordingNumber, isFollowup)
+        except Exception as e:
+            print(e)
+            dbi = tagize(False, str(e))
+            return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
 
         dbi = tagize(True, "")
         return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)

@@ -99,6 +99,7 @@ class UploadService:
         # Create the upload in the database
         upload = self.UploadRepository.CreateNewUpload(newCentreUpload)
         # Create a job for the upload
+
         self.createJobForUpload(upload.Id)
         try:
 
@@ -132,20 +133,24 @@ class UploadService:
             'isFollowup': upload.IsFollowup, 'dataset': False,
             'centreId': db_c.Id, 'uploadId': upload.Id
         }
-        connection = pika.BlockingConnection(self.connection_params)
-        channel = connection.channel()
-        # # Declare the queue
-        channel.queue_declare(queue=os.environ['SPLITTER_QUEUE_NAME'], durable=True)
-        # # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
-        channel.basic_publish(
-            exchange='',
-            routing_key=os.environ['SPLITTER_QUEUE_NAME'],
-            body=json.dumps(body),
-            properties=pika.BasicProperties(
-            delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
-        ))
-        # # Close the connection
-        connection.close()
+        try:
+            connection = pika.BlockingConnection(self.connection_params)
+            channel = connection.channel()
+            # # Declare the queue
+            channel.queue_declare(queue=os.environ['SPLITTER_QUEUE_NAME'], durable=True)
+            # # https://www.rabbitmq.com/tutorials/tutorial-one-python.html
+            channel.basic_publish(
+                exchange='',
+                routing_key=os.environ['SPLITTER_QUEUE_NAME'],
+                body=json.dumps(body),
+                properties=pika.BasicProperties(
+                delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE
+            ))
+            # # Close the connection
+            connection.close()
+        except Exception as e:
+            print(f"Failed to create job for upload {uploadId}: {e}")
+            raise e
 
 
     def getAllUploadsForCentre(self, centreId: int):
