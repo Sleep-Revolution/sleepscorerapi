@@ -1,3 +1,4 @@
+import datetime
 import io
 import shutil
 from sqlalchemy.inspection import inspect
@@ -81,6 +82,7 @@ class UploadService:
         newCentreUpload.CentreId = centreId
         newCentreUpload.IsFollowup = isFollowup
         newCentreUpload.RecordingNumber = recordingNumber
+        newCentreUpload.Timestamp = datetime.datetime.now()
         newCentreUpload.RecordingIdentifier = GetRecordingIdentifierForUpload(newCentreUpload, db_c) #f'{db_c.Prefix}{str(db_c.MemberNumber).zfill(2)}-{str(recordingNumber).zfill(2)}'
         newCentreUpload.Location = os.path.join(db_c.FolderLocation, newCentreUpload.RecordingIdentifier)
         fpath = os.path.join(UPLOAD_DIR,db_c.FolderLocation)
