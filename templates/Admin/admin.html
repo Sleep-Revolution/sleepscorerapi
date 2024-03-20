@@ -23,9 +23,26 @@
       <a class="btn btn-primary m-2" href="/admin/accounts">Check out the account control system</a> <br />
       <a class="btn btn-primary m-2" href="/admin/dataset">Upload an entire dataset at once</a> <br />
       <a class="btn btn-primary m-2" href="/admin/datasets">Look at all the datasets</a> 
+
+      <table class="table table-striped ">
+        <thead>
+          <tr>
+            <th scope="col">Centre</th>
+            <th scope="col">Uploads</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for centre in breakdown %}
+            <tr>
+              <td>{{ centre[0] }}</td>
+              <td>{{ centre[1] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-8">
       <h4 class="mb-4">Last 10 Uploads:</h4>
       <div class="list-group">
         {% for upload in feed[:10] %}
@@ -48,8 +65,6 @@
         {% endfor %}
       </div>
     </div>
-    
-
   </div>
 </div>
 

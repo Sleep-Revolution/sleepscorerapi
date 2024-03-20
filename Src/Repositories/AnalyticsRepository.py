@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.orm import sessionmaker
 import os
-from Src.Models.Models import NightLogDataEntry, UploadLogDataEntry
+from Src.Models.Models import Centre, CentreUpload, NightLogDataEntry, UploadLogDataEntry
 
     
 class AnalyticsRepository:
@@ -21,6 +21,7 @@ class AnalyticsRepository:
         else:
             self.Session = session
 
+    
 
     def GetAllLogsForNight(self, nightId):
         with self.Session() as session:

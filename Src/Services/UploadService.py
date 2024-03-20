@@ -154,6 +154,8 @@ class UploadService:
             print(f"Failed to create job for upload {uploadId}: {str(e)}")
             raise e
 
+    def GetUploadsByCenters(self):
+        return self.UploadRepository.GetUploadCountsByCentre()
 
     def getAllUploadsForCentre(self, centreId: int):
         uploads = self.UploadRepository.GetAllUploadsForCentre(centreId)

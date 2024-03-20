@@ -4,6 +4,8 @@ from sqlalchemy.orm import sessionmaker
 import os
 from Src.Infrastructure.Utils import GetRecordingIdentifierForNight, GetRecordingIdentifierForUpload
 from Src.Models.Models import CentreUpload, Centre, Night
+from sqlalchemy import func
+
 
 class UploadRepository:
     def __init__(self, session=None):
@@ -61,6 +63,14 @@ class UploadRepository:
                 upload.Logs
                 upload.RecordingIdentifier = GetRecordingIdentifierForUpload(upload, upload.Centre)
             return uploads
+        
+    def GetUploadCountsByCentre(self):
+        with self.Session() as session:
+            upload_counts = session.query(Centre.CentreName, func.count(CentreUpload.Id)) \
+                .join(CentreUpload, Centre.Id == CentreUpload.CentreId) \
+                .group_by(Centre.CentreName) \
+                .all()
+            return upload_counts
 
     def GetAllCentres(self):
         with self.Session() as session:

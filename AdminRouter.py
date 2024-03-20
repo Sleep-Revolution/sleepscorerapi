@@ -74,7 +74,10 @@ async def AdminStuff(request: Request):
             upload.time_since = humanfriendly.format_timespan(time_difference)
         preprocConsumers = len(uploadService.get_active_connections("dev_preprocessing_queue"))
         procConsumers = len(uploadService.get_active_connections("dev_task_queue"))
-        return templates.TemplateResponse("Admin/admin.html", {"request": request, "centre": request.state.centre, "preprocConsumers": preprocConsumers, "procConsumers": procConsumers, "feed": feed})
+
+        breakdown = uploadService.GetUploadsByCenters()
+
+        return templates.TemplateResponse("Admin/admin.html", {"request": request, "centre": request.state.centre, "preprocConsumers": preprocConsumers, "procConsumers": procConsumers, "feed": feed, "breakdown": breakdown}) 
 
 @AdminRouter.get("/uploads", response_class=HTMLResponse)
 async def UploadList(request: Request):
