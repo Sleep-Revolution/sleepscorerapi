@@ -350,3 +350,6 @@ class UploadService:
             shutil.rmtree(nightLocation)
         else:
             print(f"Could not find {nightLocation} to delete it.")
+
+
+    

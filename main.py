@@ -109,11 +109,13 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
     centre = request.state.centre
     if not centre: 
         print("Problem finding centre in request")
-        raise ValueError("Centre required.")
+        dbi = tagize(False, "This upload is not authorized (credentials not found).")
+        return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
 
     if recordingNumber == -1:
         print("Got invalid recording.")
-        raise ValueError("Recording number must be provided.")
+        dbi = tagize(False, "Invalid recording number.")
+        return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
 
     print(recordingNumber, centre.Id, request.state.xforwarded, isFollowup)
 
