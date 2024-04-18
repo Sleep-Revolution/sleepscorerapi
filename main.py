@@ -124,7 +124,13 @@ async def create_upload_file(request: Request, file: UploadFile = File(...),
         print("Invalid file")
         dbi = tagize(False, "Invalid file type.")
         return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
-        
+
+    # if file doesn't end with .zip, return error
+    if not file.filename.endswith(".zip"):
+        print("Invalid file")
+        dbi = tagize(False, "Invalid file type.")
+        return RedirectResponse(f"/upload_complete?tag={dbi}", status_code=302)
+
     else:
         print(f"->>>> Creating upload with {file.filename}")
         # The business logic should be implemented in the service class.
