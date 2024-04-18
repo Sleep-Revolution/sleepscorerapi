@@ -9,7 +9,7 @@ def CreateAccessToken(CentreId: int) -> str:
     # Define token expiration time
     # _jwt = 
     expires_delta = timedelta(minutes=60)
-    expires = datetime.utcnow() + expires_delta
+    expires = datetime.now() + expires_delta
 
     # Define token payload
     payload = {"centreId": str(CentreId), "exp": expires}
