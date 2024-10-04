@@ -68,10 +68,11 @@ async def AdminStuff(request: Request):
         print("redirecting due to no creds")
         return RedirectResponse('/login')
     if request.state.centre.IsAdministrator:
-        feed = uploadService.GetLastNUploads(10)
+        feed = uploadService.GetLastNUploads(250)
         for upload in feed:
             time_difference = datetime.datetime.now() - upload.Timestamp
             upload.time_since = humanfriendly.format_timespan(time_difference)
+
         preprocConsumers = len(uploadService.get_active_connections("dev_preprocessing_queue"))
         procConsumers = len(uploadService.get_active_connections("dev_task_queue"))
 
