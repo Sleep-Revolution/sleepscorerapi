@@ -24,7 +24,7 @@ Here are all the uploads for each centre:
   <div class="accordion-item">
     <h2 class="accordion-header" id="heading{{ centre.Id }}">
       <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ centre.Id }}" aria-expanded="false" aria-controls="collapse{{ centre.Id }}">
-        {{ centre.CentreName }}
+        {{centre.Prefix}}-{{centre.MemberNumber}}  - {{ centre.CentreName }}
       </button>
     </h2>
     <div id="collapse{{ centre.Id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ centre.Id }}" data-bs-parent="#accordionExample">
